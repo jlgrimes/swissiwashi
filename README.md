@@ -1,5 +1,7 @@
 POM (Packala Open Manager) is a lightweight TOM clone written in React for people who don't have access to TOM or would prefer something more lightweight. POM is only to be used for *unsanctioned* events.
 
+Everything I'm going to say below is essentially a carbon copy [Chris Schemanske's awesome article on how this stuff works](https://sixprizes.com/tiebreakers/), I just put it into code.
+
 ## Data Structures
 
 Each player is stored as follows:
@@ -10,11 +12,12 @@ player = {
     wins: 4,
     ties: 0,
     losses: 0,
-    played: ["Russell LaParre", "Rahul Reddy", "Chris Schemanske", "Kenward"]
+    played: ["Russell LaParre", "Rahul Reddy", "Chris Schemanske", "Kenward"],
+    byes: 0
 }
 ```
 
-Note: Players in the "played" array are references to other players, instead of plain strings.
+Players in the "played" array are indeed stored as strings instead of objects, and dereferenced when I need the actual player. That's because JSON can't stringify circular objects... nor do I want to deal with them.
 
 For pairings, the array is sorted by match points first (calculated below), then resistance (also calculated balow).
 
@@ -29,8 +32,10 @@ let matchPoints = player => player.wins * 3 + player.ties;
 The resistance calculation (formula pulled from [this thread](http://pokegym.net/community/index.php?threads/tournament-resistance-calculation.29506/)) is the average of all played opponents' win percentages. Each win percentage is calculated by averaging the wins, losses, and ties over the number of matches played (ties count as half of a win). This is done as follows:
 
 ```javascript
-let winPercentage = player => (player.wins + player.ties / 2) / (player.losses);
+let winPercentage = player => Math.max(0.25, (resistanceWins(player) + player.ties / 2) / (resistanceWins(player) + player.ties + player.losses));
 ```
+
+As you can see, players' win percentages can't be lower than 25% in order to minimize the hurt done to players that play against them.
 
 From this method, we can define a particular player's resistance as follows:
 
@@ -41,7 +46,7 @@ let resistance = player => {
                               
     // Add the win percentages of each player
     for (let p in player.played)
-        resistanceTotal += winPercentage(player.played[p]);
+        resistanceTotal += winPercentage(findPlayer(player.played[p]));
     
     // Divide by total number of players. This gets the average win percentage
     resistanceTotal /= player.played.length;
@@ -50,3 +55,5 @@ let resistance = player => {
     return resistanceTotal;
 }
 ```
+
+## Byes
