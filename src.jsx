@@ -368,7 +368,7 @@ function comparePlayers(thisPlayer, nextPlayer) {
 
 function comparePlayersIncludeResistance(thisPlayer, nextPlayer) {
     if (matchPoints(thisPlayer) == matchPoints(nextPlayer))
-        return resistance(thisPlayer) < resistance(nextPlayer);
+        return  resistance(nextPlayer) - resistance(thisPlayer);
     
     return comparePlayers(thisPlayer, nextPlayer);
 }
