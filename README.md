@@ -56,4 +56,9 @@ let resistance = player => {
 }
 ```
 
-## Byes
+## Known Issues
+
+* Doesn't repair if already played someone
+* No way to tie a match (ideally click vs)
+* Can't drop a player from the tournament
+* Can't show intermediate tournament progress

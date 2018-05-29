@@ -5,6 +5,7 @@ class Initialize extends React.Component {
         this.handleChange = this.handleChange.bind(this);
         this.startTournament = this.startTournament.bind(this);
         this.loadPreset = this.loadPreset.bind(this);
+        this.addPlayer = this.addPlayer.bind(this);
         this.deletePlayer = this.deletePlayer.bind(this);
     }
     
@@ -12,14 +13,19 @@ class Initialize extends React.Component {
         this.setState({newPlayer: event.target.value});
     }
     
+    handleKeyPress(target) {
+        if(target.charCode==13)
+            this.addPlayer();
+    }
+    
     addPlayer() {
         if (this.state.newPlayer == undefined || this.state.newPlayer == "") {
-            alert("Please input a name");
+            toast("Please input a name");
             return;
         }
         
         if (findPlayer(this.state.newPlayer)) {
-            alert("Please input a unique name");
+            toast("Please input a unique name");
             return;
         }
         
@@ -34,20 +40,25 @@ class Initialize extends React.Component {
         this.setState({
             players
         });
-        
+    
         $("#player-input").val("");
+        toast(this.state.newPlayer + " added!");
     }
     
     deletePlayer(e) {
+        toast(e.target.id + " dropped!");
+        players.splice(players.indexOf(p => p.name == e.target.id), 1);
         $("[id='" + e.target.id + "']").remove();
     }
     
     loadPreset() {
         players = JSON.parse(JSON.stringify(presetPlayers));
         this.setState({players: presetPlayers});
+        toast("Preset loaded!");
     }
     
     startTournament() {
+        shuffle(players);
         ReactDOM.render(
             <Pairings players={players} pairings={pairings}/>,
             document.getElementById('root')
@@ -60,44 +71,51 @@ class Initialize extends React.Component {
             <div class="container">
                 <h2>POM</h2>
                 <h4>Packala Open Manager</h4>
-                <input placeholder="Enter player name" id="player-input" onChange={this.handleChange} />
-                <button onClick={() => this.addPlayer()} class="btn">Enter Player</button>
-                <button onClick={() => this.startTournament()} class="btn">Start Tournament</button>
-                <ul>
-                    {players.map(p => <li onClick={(e) => this.deletePlayer(e)} id={p.name}>{p.name}</li>)}
-                </ul>
-                <button class="btn btn-primary" onClick={() => this.loadPreset()}>Load Preset Players</button>
-                <p>Click on a player to drop them from the tournament (coming soon)</p>
+                <a href="https://github.com/comp0cker/pom">Open-Sourced</a>
+                <input placeholder="Enter player name" id="player-input" onChange={this.handleChange} onKeyPress={(e) => this.handleKeyPress(e)} />
+                <button onClick={() => this.addPlayer()} class="btn"><i class="material-icons left">person_add</i>Enter Player</button>
+                <button onClick={() => this.startTournament()} class="btn"><i class="material-icons left">input</i>Start Tournament</button>
+                <div class="collection">
+                    {players.map(p => <a class="collection-item" onClick={(e) => this.deletePlayer(e)} id={p.name}>{p.name}</a>)}
+                </div>
+                <button class="btn btn-primary" onClick={() => this.loadPreset()}><i class="material-icons left">file_download</i>Load Preset Players</button>
             </div>
         );
     }
 }
 
 let newPairings = () => {
+    matchesComplete = 0;
+    console.log(JSON.parse(JSON.stringify(players)));
     players.sort(comparePlayers);
+    console.log(JSON.parse(JSON.stringify(players)));
     pairings = [];
     
     // Accounting for the bye in the ORIGINAL players array
     if (players.length % 2 != 0) {
         players[players.length - 1].wins++;
         players[players.length - 1].byes++;
+        matchesComplete++;
+        //toast(matchesComplete);
     }
 
     let tempPlayers = JSON.parse(JSON.stringify(players));
+    let byePlayer = ""; // if we need to store the bye player
     
     // Pushing the bye pairing
     if (tempPlayers.length % 2 != 0) {
-        pairings.push({
-                first: tempPlayers[tempPlayers.length - 1],
+        byePlayer = {
+                first: JSON.parse(JSON.stringify(tempPlayers[tempPlayers.length - 1])),
                 second: "bye"
-            });
+            };
         
         // We don't want to include this player in for pairing
         tempPlayers.pop();
     }
 
+    console.log("begin");
     while (tempPlayers.length > 0) {
-        let matchPointTierBegin = 0;
+        let matchPointTierBegin = 1;
         let matchPointTierEnd = tempPlayers.map(p => matchPoints(p)).lastIndexOf(matchPoints(tempPlayers[1]));
         
         //console.log(matchPointTierEnd);
@@ -107,14 +125,16 @@ let newPairings = () => {
         
         //console.log("range " + matchPointTierRange);
         
-        let firstPlayerPos = Math.floor(Math.random() * matchPointTierRange)
-        //let firstPlayerPos = Math.floor(Math.random() * tempPlayers.length);
+        let firstPlayerPos = 0;
         let firstPlayer = findPlayer(tempPlayers[firstPlayerPos].name);
+        //let firstPlayerCopy = JSON.parse(JSON.stringify(firstPlayer));
         tempPlayers.splice(firstPlayerPos, 1);
-
         
         let secondPlayerPos = Math.floor(Math.random() * matchPointTierRange);
         let secondPlayer = findPlayer(tempPlayers[secondPlayerPos].name);
+        
+        //alert(firstPlayerCopy.played.find(p => p == secondPlayer.name));
+        
         tempPlayers.splice(secondPlayerPos, 1);
         
         //console.log(firstPlayer);
@@ -124,6 +144,9 @@ let newPairings = () => {
             second: secondPlayer
         });
     }
+    
+    if (byePlayer != "")
+        pairings.push(byePlayer);
 }
 
 class GeneratePairings extends React.Component {
@@ -142,17 +165,17 @@ class GeneratePairings extends React.Component {
             if (p == "bye")
                 return <div class="col-sm" id="bye">BYE</div>;
             return (
-                <div class="col-sm" id={p.name} onClick={(e) => this.handleClick(e)}>{p.name + " (" + p.wins + "-" + p.ties + "-" + p.losses + ") " + resistanceDisplay(p) + "%"}</div>
+                <div class="col-sm" id={p.name} onClick={(e) => this.handleClick(e)}>{displayPlayer(p)}</div>
             );
         }
     
         handleClick(e) {
             // Make sure we don't already have a result
-            if (e.target.parentElement.classList.contains('round-complete'))
+            if (e.target.parentElement.classList.contains('active'))
                 return;
             
             // Say we have a result
-            e.target.parentElement.classList.add('round-complete');
+            e.target.parentElement.classList.add('active');
             
             // Find the name of the next player
             let nextPlayer;
@@ -174,8 +197,8 @@ class GeneratePairings extends React.Component {
             nextPlayerObj.losses++;
             
             // Marks that each player has played one another
-            thisPlayerObj.played.push(nextPlayerObj.name);
-            nextPlayerObj.played.push(thisPlayerObj.name);
+            thisPlayerObj.played.push({name: nextPlayerObj.name, result: "win"});
+            nextPlayerObj.played.push({name: thisPlayerObj.name, result: "loss"});
             
             matchesComplete++;
             this.setState({players: players});
@@ -183,8 +206,8 @@ class GeneratePairings extends React.Component {
 
         render() {
             return (
-                <div>{pairings.map(p => 
-                    <div class="row">
+                <div class="collection">{pairings.map(p => 
+                    <div class="row collection-item">
                         {this.displayPlayer(p.first)}
                         <div class="col-sm"> vs </div>
                         {this.displayPlayer(p.second)}
@@ -202,20 +225,24 @@ class Pairings extends React.Component {
         this.endTournament = this.endTournament.bind(this);
     }
     
+    componentDidMount() {
+        $("#bye").parent().addClass("active");
+    }
+    
     nextRound() {
         if (matchesComplete < pairings.length) {
-            M.toast({html: 'Please complete all pairings to generate a new round'})
+            //toast("matchescomplete " + matchesComplete + " vs " + pairings.length);
+            toast('Please complete all pairings to generate a new round');
             return;
         }
         
         let r = this.state.round + 1;
         this.setState({round: r});
         
-        $(".round-complete").removeClass("round-complete")
+        $(".active").removeClass("active")
         
         newPairings();
-        matchesComplete = 0;
-        $("#bye").parent().addClass("round-complete");
+        $("#bye").parent().addClass("active");
     }
     
     endTournament() {
@@ -227,7 +254,7 @@ class Pairings extends React.Component {
     
     render() {   
         return (
-            <div>
+            <div class="container">
                 <h1 id="round-number">Round {this.state.round}</h1>
                 <GeneratePairings players={players} />
                 <button class="btn" onClick={() => this.nextRound()}>Next Round</button>
@@ -245,6 +272,11 @@ class Results extends React.Component {
         this.newTournament = this.newTournament.bind(this);
     }
     
+    componentDidMount() {
+        // Make the collapsibles work after rendering
+        $('.collapsible').collapsible();
+    }
+    
     newTournament() {
         players = [];
         ReactDOM.render(
@@ -255,67 +287,56 @@ class Results extends React.Component {
     
     render() {
         return (
-            <div>
+            <div class="container">
                 <h1>Final Standings</h1>
+                <p>Click on each player to view their matchups</p>
                 <ul class="collapsible">
-                    {players.map(p => <li id={p.name} onClick={(e) => this.handleClick(e)}>{p.name + " (" + p.wins + "-" + p.ties + "-" + p.losses + ") " + resistanceDisplay(p) + "%"} </li>)}
+                    {players.map((p, i) => <li> 
+                                     <div class="collapsible-header" id={p.name} onClick={(e) => this.handleClick(e)}>{addOne(i) + ". " + displayPlayer(p)}</div>
+                                     
+                                     <div class="collapsible-body">
+                                         <ul>
+                                        {p.played.map((q, j) =>
+                                                       <li>Round {addOne(j)} {q.name} - {q.result}</li>
+                                                       )}
+                                        </ul>
+                                     </div> 
+                                 </li>)}
                 </ul>
                 <button class="btn" onClick={() => this.newTournament()}>New Tournament</button>
             </div>
         );
     }
 }
-    
+
+let addOne = (i) => i + 1;
 
 let players = [];
 
-let presetPlayers = [{
-    name: 'Jared',
-    wins: 0,
-    ties: 0,
-    losses: 0,
-    played: [],
-    byes: 0
-}, {
-    name: 'Kenward',
-    wins: 0,
-    ties: 0,
-    losses: 0,
-    played: [],
-    byes: 0
-}, {
-    name: 'Schemanske',
-    wins: 0,
-    ties: 0,
-    losses: 0,
-    played: [],
-    byes: 0
-}, {
-    name: 'Slow boi',
-    wins: 0,
-    ties: 0,
-    losses: 0,
-    played: [],
-    byes: 0
-}, {
-    name: 'REEEE',
-    wins: 0,
-    ties: 0,
-    losses: 0,
-    played: [],
-    byes: 0
-}, {
-    name: 'Bulu gang',
-    wins: 0,
-    ties: 0,
-    losses: 0,
-    played: [],
-    byes: 0
-}];
+function newPlayer(players) {
+    let obj = [];
+    for (let p in players)
+        obj.push({
+            name: players[p],
+            wins: 0,
+            ties: 0,
+            losses: 0,
+            played: [],
+            byes: 0
+        });
+    
+    return obj;
+}
+
+let presetPlayers = newPlayer(['Jared Grimes', 'Kenny Packala', 'Alex Schemanske', 'Chris Schemanske', 'Solomon Shurge', 'Connor Click', 'Ryan Shore', 'Zack Taylor', 'Josh Taylor', 'George Dickerson', 'Vince Ruiz', 'Jake Bragdon', 'James Long', 'Alex Baker', 'Noel Alyx Dare', 'Heretic', 'Chris Derocher']);
 
 let pairings = [];
 
 let matchesComplete = 0;
+
+let matchPoints = player => player.wins * 3 + player.ties;
+
+let displayPlayer = p => p.name + " (" + p.wins + "-" + p.losses + "-" + p.ties + " (" + matchPoints(p) + ")) " + resistanceDisplay(p) + "%";
 
 let findPlayer = (name) => {
     for (let p in players)
@@ -325,14 +346,12 @@ let findPlayer = (name) => {
     return false;
 };
 
-let matchPoints = player => player.wins * 3 + player.ties;
-
 let winPercentage = player => Math.max(0.25, (resistanceWins(player) + player.ties / 2) / (resistanceWins(player) + player.ties + player.losses));
 
 let resistance = (player) => {
     let resistanceTotal = 0;
     for (let p in player.played)
-        resistanceTotal += winPercentage(findPlayer(player.played[p]));
+        resistanceTotal += winPercentage(findPlayer(player.played[p].name));
     
     resistanceTotal /= player.played.length;
     return resistanceTotal;
@@ -344,7 +363,7 @@ let resistanceDisplay = player => resistance(player).toFixed(4) * 100;
 
 function comparePlayers(thisPlayer, nextPlayer) {
     // We want the list in descending order
-    return matchPoints(thisPlayer) < matchPoints(nextPlayer);
+    return matchPoints(nextPlayer) - matchPoints(thisPlayer);
 }
 
 function comparePlayersIncludeResistance(thisPlayer, nextPlayer) {
@@ -352,6 +371,16 @@ function comparePlayersIncludeResistance(thisPlayer, nextPlayer) {
         return resistance(thisPlayer) < resistance(nextPlayer);
     
     return comparePlayers(thisPlayer, nextPlayer);
+}
+
+function toast(text) { M.toast({html: text}) }
+
+function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
 }
 
 ReactDOM.render(
