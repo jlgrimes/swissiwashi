@@ -208,7 +208,6 @@ class GeneratePairings extends React.Component {
             return (
                 <div class="collection">{pairings.map((p, i) => 
                     <div class="row collection-item">
-                        <div class="col s2">Table {addOne(i)}</div>
                         {this.displayPlayer(p.first)}
                         <div class="col s6 center-align"> vs </div>
                         {this.displayPlayer(p.second)}

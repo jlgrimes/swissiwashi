@@ -62,4 +62,4 @@ let resistance = player => {
 * No way to tie a match (ideally click vs)
 * Can't drop a player from the tournament
 * Can't show intermediate tournament progress
-* Formatting pairings UI for individual rows
+* Formatting pairings UI for individual rows. Table # doesn't want to work
