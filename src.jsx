@@ -163,9 +163,9 @@ class GeneratePairings extends React.Component {
             //this.setState({players: players});
             //alert(p.name + " " + p.wins);
             if (p == "bye")
-                return <div class="col-sm" id="bye">BYE</div>;
+                return <div class="col s6" id="bye">BYE</div>;
             return (
-                <div class="col-sm" id={p.name} onClick={(e) => this.handleClick(e)}>{displayPlayer(p)}</div>
+                <div class="col s6" id={p.name} onClick={(e) => this.handleClick(e)}>{displayPlayer(p)}</div>
             );
         }
     
@@ -206,10 +206,11 @@ class GeneratePairings extends React.Component {
 
         render() {
             return (
-                <div class="collection">{pairings.map(p => 
+                <div class="collection">{pairings.map((p, i) => 
                     <div class="row collection-item">
+                        <div class="col s2">Table {addOne(i)}</div>
                         {this.displayPlayer(p.first)}
-                        <div class="col-sm"> vs </div>
+                        <div class="col s6 center-align"> vs </div>
                         {this.displayPlayer(p.second)}
                     </div>
                 )}</div>
@@ -328,7 +329,7 @@ function newPlayer(players) {
     return obj;
 }
 
-let presetPlayers = newPlayer(['Jared Grimes', 'Kenny Packala', 'Alex Schemanske', 'Chris Schemanske', 'Solomon Shurge', 'Connor Click', 'Ryan Shore', 'Zack Taylor', 'Josh Taylor', 'George Dickerson', 'Vince Ruiz', 'Jake Bragdon', 'James Long', 'Alex Baker', 'Noel Alyx Dare', 'Heretic', 'Chris Derocher']);
+let presetPlayers = newPlayer(['Player 1', 'Player 2', 'Player 3', 'Player 4', 'Player 5', 'Player 6', 'Player 7', 'Player 8', 'Player 9', 'Player 10']);
 
 let pairings = [];
 
