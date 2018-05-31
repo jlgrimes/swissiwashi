@@ -56,10 +56,15 @@ let resistance = player => {
 }
 ```
 
-## Known Issues
+### Known Issues
 
-* Doesn't repair if already played someone
+* Tabs are broken, I know
 * No way to tie a match (ideally click vs)
 * Can't drop a player from the tournament
-* Can't show intermediate tournament progress
+
+### Work in Progress
+
+Along with comments listed above.
+
 * Formatting pairings UI for individual rows. Table # doesn't want to work
+* One component for results/pairings instead of separate classes

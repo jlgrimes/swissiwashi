@@ -75,7 +75,7 @@ class Initialize extends React.Component {
                 <input placeholder="Enter player name" id="player-input" onChange={this.handleChange} onKeyPress={(e) => this.handleKeyPress(e)} />
                 <button onClick={() => this.addPlayer()} class="btn"><i class="material-icons left">person_add</i>Enter Player</button>
                 <button onClick={() => this.startTournament()} class="btn"><i class="material-icons left">input</i>Start Tournament</button>
-                <div class="collection">
+                <div id="pairings" class="collection">
                     {players.map(p => <a class="collection-item" onClick={(e) => this.deletePlayer(e)} id={p.name}>{p.name}</a>)}
                 </div>
                 <button class="btn btn-primary" onClick={() => this.loadPreset()}><i class="material-icons left">file_download</i>Load Preset Players</button>
@@ -86,9 +86,7 @@ class Initialize extends React.Component {
 
 let newPairings = () => {
     matchesComplete = 0;
-    console.log(JSON.parse(JSON.stringify(players)));
     players.sort(comparePlayers);
-    console.log(JSON.parse(JSON.stringify(players)));
     pairings = [];
     
     // Accounting for the bye in the ORIGINAL players array
@@ -127,13 +125,48 @@ let newPairings = () => {
         
         let firstPlayerPos = 0;
         let firstPlayer = findPlayer(tempPlayers[firstPlayerPos].name);
-        //let firstPlayerCopy = JSON.parse(JSON.stringify(firstPlayer));
         tempPlayers.splice(firstPlayerPos, 1);
         
         let secondPlayerPos = Math.floor(Math.random() * matchPointTierRange);
         let secondPlayer = findPlayer(tempPlayers[secondPlayerPos].name);
         
-        //alert(firstPlayerCopy.played.find(p => p == secondPlayer.name));
+        // WIPPPPPP
+        let matchPointTierSpliced = arrayOfPositions(0, matchPointTierRange); 
+        let restOfPlayersSpliced = arrayOfPositions(matchPointTierRange, tempPlayers.length);
+        
+        let newSecondPlayerPos = '', newSecondPlayerPosPos = '';
+        while (findPlayedIndex(firstPlayer, secondPlayer.name) && matchPointTierSpliced.length > 0) {
+            console.log('first loop');
+            if (matchPointTierSpliced.length > 1) {
+                newSecondPlayerPosPos = Math.floor(Math.random() * matchPointTierSpliced.length);
+                newSecondPlayerPos = matchPointTierSpliced[newSecondPlayerPosPos];
+                secondPlayer = findPlayer(tempPlayers[newSecondPlayerPos].name);
+            }
+            else {
+                newSecondPlayerPosPos = 0;
+            }
+            
+            matchPointTierSpliced.splice(newSecondPlayerPosPos, 1);
+        }
+        
+        while (findPlayedIndex(firstPlayer, secondPlayer.name) && restOfPlayersSpliced.length > 0) {
+            console.log('second loop');
+            if (restOfPlayersSpliced.length > 1) {
+                newSecondPlayerPosPos = Math.floor(Math.random() * restOfPlayersSpliced.length);
+                newSecondPlayerPos = restOfPlayersSpliced[newSecondPlayerPosPos];
+                secondPlayer = findPlayer(tempPlayers[newSecondPlayerPos].name);
+            }
+            else {
+                newSecondPlayerPosPos = 0;
+            }
+            
+           restOfPlayersSpliced.splice(newSecondPlayerPosPos, 1);
+        }
+        
+        if (findPlayedIndex(firstPlayer, secondPlayer.name)) {
+            toast("No pairings possible.");
+            return;
+        }
         
         tempPlayers.splice(secondPlayerPos, 1);
         
@@ -147,6 +180,9 @@ let newPairings = () => {
     
     if (byePlayer != "")
         pairings.push(byePlayer);
+    
+    pairingsHistory.push(JSON.parse(JSON.stringify(pairings)));
+    currentPairings = pairings;
 }
 
 class GeneratePairings extends React.Component {
@@ -157,6 +193,10 @@ class GeneratePairings extends React.Component {
             
             newPairings();
             this.state = {players: props.players};
+        }
+    
+        componentDidMount() {
+            M.AutoInit();
         }
     
         displayPlayer(p) {
@@ -206,13 +246,15 @@ class GeneratePairings extends React.Component {
 
         render() {
             return (
-                <div class="collection">{pairings.map((p, i) => 
+                <div>
+                <div class="collection">{currentPairings.map((p, i) => 
                     <div class="row collection-item">
                         {this.displayPlayer(p.first)}
                         <div class="col s6 center-align"> vs </div>
                         {this.displayPlayer(p.second)}
                     </div>
                 )}</div>
+                </div>
             );
         }
     }
@@ -223,9 +265,11 @@ class Pairings extends React.Component {
         this.state = {round: 1};
         this.nextRound = this.nextRound.bind(this);
         this.endTournament = this.endTournament.bind(this);
+        this.loadRound = this.loadRound.bind(this);
     }
     
     componentDidMount() {
+         M.AutoInit();
         $("#bye").parent().addClass("active");
     }
     
@@ -242,7 +286,17 @@ class Pairings extends React.Component {
         $(".active").removeClass("active")
         
         newPairings();
+        
+        rounds.push(r);
         $("#bye").parent().addClass("active");
+    }
+    
+    loadRound(r) {
+        console.log(pairingsHistory);
+        currentPairings = pairingsHistory[r - 1];
+        console.log(currentPairings);
+        
+        this.forceUpdate();
     }
     
     endTournament() {
@@ -256,6 +310,17 @@ class Pairings extends React.Component {
         return (
             <div class="container">
                 <h1 id="round-number">Round {this.state.round}</h1>
+                <div class="row">
+                    <div class="col s12">
+                      <ul class="tabs">{
+                              rounds.map(r => <li class="tab col s3">
+                                             <a onClick={() => this.loadRound(r)}>
+                                                 Round {r}
+                                             </a>
+                                         </li>)}
+                      </ul>
+                    </div>
+                </div>
                 <GeneratePairings players={players} />
                 <button class="btn" onClick={() => this.nextRound()}>Next Round</button>
                 <button class="btn" onClick={() => this.endTournament()}>End Tournament</button>
@@ -263,6 +328,7 @@ class Pairings extends React.Component {
         );
     }
 }
+
 
 class Results extends React.Component {
     constructor() {
@@ -274,11 +340,13 @@ class Results extends React.Component {
     
     componentDidMount() {
         // Make the collapsibles work after rendering
-        $('.collapsible').collapsible();
+       M.AutoInit();
     }
     
     newTournament() {
         players = [];
+        pairingsHistory = [];
+        rounds = [1];
         ReactDOM.render(
             <Initialize />,
             document.getElementById('root')
@@ -312,6 +380,19 @@ class Results extends React.Component {
 let addOne = (i) => i + 1;
 
 let players = [];
+let pairings = [];
+let currentPairings = pairings;
+let pairingsHistory = [];
+let rounds = [1];
+
+function arrayOfPositions (lowerBound, upperBound) {
+    let arr = [];
+    
+    for (let i = lowerBound; i < upperBound; i++)
+        arr.push(i);
+    
+    return arr;
+}
 
 function newPlayer(players) {
     let obj = [];
@@ -330,8 +411,6 @@ function newPlayer(players) {
 
 let presetPlayers = newPlayer(['Player 1', 'Player 2', 'Player 3', 'Player 4', 'Player 5', 'Player 6', 'Player 7', 'Player 8', 'Player 9', 'Player 10']);
 
-let pairings = [];
-
 let matchesComplete = 0;
 
 let matchPoints = player => player.wins * 3 + player.ties;
@@ -345,6 +424,14 @@ let findPlayer = (name) => {
     
     return false;
 };
+
+function findPlayedIndex(player, playedName) {
+    for (let p in player.played)
+        if (player.played[p].name == playedName)
+            return p;
+    
+    return false;
+}
 
 let winPercentage = player => Math.max(0.25, (resistanceWins(player) + player.ties / 2) / (resistanceWins(player) + player.ties + player.losses));
 
