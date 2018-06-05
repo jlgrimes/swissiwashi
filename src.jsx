@@ -47,7 +47,7 @@ class Initialize extends React.Component {
     
     deletePlayer(e) {
         toast(e.target.id + " dropped!");
-        players.splice(players.indexOf(p => p.name == e.target.id), 1);
+        players.splice(players.findIndex(p => p.name == e.target.id), 1);
         $("[id='" + e.target.id + "']").remove();
     }
     
@@ -191,6 +191,7 @@ class GeneratePairings extends React.Component {
             this.displayPlayer = this.displayPlayer.bind(this);
             this.handleClick = this.handleClick.bind(this);
             
+            // If it's on the pairings page, generate new pairings. Else, recall the round we were on
             newPairings();
             this.state = {players: props.players};
         }
@@ -242,6 +243,8 @@ class GeneratePairings extends React.Component {
             
             matchesComplete++;
             this.setState({players: players});
+            
+            currentPairings = pairingsHistory[pairingHistory.length - 1];
         }
 
         render() {
@@ -259,6 +262,16 @@ class GeneratePairings extends React.Component {
         }
     }
 
+let renderUnclickablePlayers = () => <div>
+                <div class="collection">{currentPairings.map((p, i) => 
+                    <div class="row collection-item">
+                        {displayPlayer(p.first)}
+                        <div class="col s6 center-align"> vs </div>
+                        {displayPlayer(p.second)}
+                    </div>
+                )}</div>
+                </div>
+
 class Pairings extends React.Component {
     constructor(props) {
         super(props);
@@ -266,11 +279,18 @@ class Pairings extends React.Component {
         this.nextRound = this.nextRound.bind(this);
         this.endTournament = this.endTournament.bind(this);
         this.loadRound = this.loadRound.bind(this);
+        this.renderRounds = this.renderRounds.bind(this);
+        this.newTournament = this.newTournament.bind(this);
+        this.renderTabBar = this.renderTabBar.bind(this);
     }
     
     componentDidMount() {
          M.AutoInit();
         $("#bye").parent().addClass("active");
+    }
+    
+    componentDidUpdate() {
+         M.AutoInit();
     }
     
     nextRound() {
@@ -300,47 +320,14 @@ class Pairings extends React.Component {
     }
     
     endTournament() {
+        players.sort(comparePlayersIncludeResistance);
+        this.setState({round: "DONE"});
+        /* Old implementation with Results component
         ReactDOM.render(
             <Results />,
             document.getElementById('root')
         );
-    }
-    
-    render() {   
-        return (
-            <div class="container">
-                <h1 id="round-number">Round {this.state.round}</h1>
-                <div class="row">
-                    <div class="col s12">
-                      <ul class="tabs">{
-                              rounds.map(r => <li class="tab col s3">
-                                             <a onClick={() => this.loadRound(r)}>
-                                                 Round {r}
-                                             </a>
-                                         </li>)}
-                      </ul>
-                    </div>
-                </div>
-                <GeneratePairings players={players} />
-                <button class="btn" onClick={() => this.nextRound()}>Next Round</button>
-                <button class="btn" onClick={() => this.endTournament()}>End Tournament</button>
-            </div>
-        );
-    }
-}
-
-
-class Results extends React.Component {
-    constructor() {
-        super();
-        players.sort(comparePlayersIncludeResistance);
-        
-        this.newTournament = this.newTournament.bind(this);
-    }
-    
-    componentDidMount() {
-        // Make the collapsibles work after rendering
-       M.AutoInit();
+        */
     }
     
     newTournament() {
@@ -353,10 +340,37 @@ class Results extends React.Component {
         );
     }
     
-    render() {
+    renderTabBar() {
         return (
+            <div class="row">
+                    <div class="col s12">
+                      <ul class="tabs">{
+                              rounds.map(r => <li class="tab col s3">
+                                             <a onClick={() => this.loadRound(r)}>
+                                                 {renderTab(r)}
+                                             </a>
+                                         </li>)}
+                      </ul>
+                    </div>
+                </div>
+        );
+    }
+    
+    renderRounds() {
+        if (this.state.round != "DONE") {
+            return(<div class="container">
+                <h1 id="round-number">Round {this.state.round}</h1>
+                <GeneratePairings round={0} />
+                <button class="btn" onClick={() => this.nextRound()}>Next Round</button>
+                <button class="btn" onClick={() => this.endTournament()}>End Tournament</button>
+            </div>);
+                              }
+        else {
+            return (
             <div class="container">
                 <h1>Final Standings</h1>
+                {this.renderTabBar()}
+                {renderUnclickablePlayers()}
                 <p>Click on each player to view their matchups</p>
                 <ul class="collapsible">
                     {players.map((p, i) => <li> 
@@ -374,6 +388,13 @@ class Results extends React.Component {
                 <button class="btn" onClick={() => this.newTournament()}>New Tournament</button>
             </div>
         );
+        }
+    }
+    
+    render() {   
+        return (
+            this.renderRounds()
+        );
     }
 }
 
@@ -384,6 +405,8 @@ let pairings = [];
 let currentPairings = pairings;
 let pairingsHistory = [];
 let rounds = [1];
+
+let numRounds = () => rounds.length - 1;
 
 function arrayOfPositions (lowerBound, upperBound) {
     let arr = [];
@@ -409,13 +432,21 @@ function newPlayer(players) {
     return obj;
 }
 
+function renderTab(r) {
+    if (Number.isInteger(r))
+        return ("Round " + r);
+    return r;
+}
+
 let presetPlayers = newPlayer(['Player 1', 'Player 2', 'Player 3', 'Player 4', 'Player 5', 'Player 6', 'Player 7', 'Player 8', 'Player 9', 'Player 10']);
 
 let matchesComplete = 0;
 
 let matchPoints = player => player.wins * 3 + player.ties;
 
-let displayPlayer = p => p.name + " (" + p.wins + "-" + p.losses + "-" + p.ties + " (" + matchPoints(p) + ")) " + resistanceDisplay(p) + "%";
+let displayPlayer = p => p.name + " (" + wins(p) + "-" + p.losses + "-" + p.ties + " (" + matchPoints(p) + ")) " + resistanceDisplay(p) + "%";
+
+let wins = player => player.wins;
 
 let findPlayer = (name) => {
     for (let p in players)
@@ -446,7 +477,7 @@ let resistance = (player) => {
 
 let resistanceWins = player => player.wins - player.byes;
 
-let resistanceDisplay = player => resistance(player).toFixed(4) * 100;
+let resistanceDisplay = player => parseFloat(resistance(player)).toFixed(4) * 100;
 
 function comparePlayers(thisPlayer, nextPlayer) {
     // We want the list in descending order
