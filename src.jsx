@@ -321,6 +321,7 @@ class Pairings extends React.Component {
     
     endTournament() {
         players.sort(comparePlayersIncludeResistance);
+        currentPairings = pairingsHistory[0];
         this.setState({round: "DONE"});
         /* Old implementation with Results component
         ReactDOM.render(
