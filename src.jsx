@@ -7,6 +7,8 @@ class Initialize extends React.Component {
         this.loadPreset = this.loadPreset.bind(this);
         this.addPlayer = this.addPlayer.bind(this);
         this.deletePlayer = this.deletePlayer.bind(this);
+        
+        matchesErrorState = false;
     }
     
     handleChange(event) {
@@ -166,6 +168,7 @@ let newPairings = () => {
         if (findPlayedIndex(firstPlayer, secondPlayer.name)) {
             toast("No pairings possible.");
             matchesComplete = pairings.length;
+            matchesErrorState = true;
             round--;
             $(".collection-item").addClass("active");
             return;
@@ -187,6 +190,7 @@ let newPairings = () => {
     pairingsHistory.push(JSON.parse(JSON.stringify(pairings)));
     currentPairings = pairings;
     rounds.push(round);
+    $(".active").removeClass("active")
 }
 
 class GeneratePairings extends React.Component {
@@ -331,6 +335,10 @@ class Pairings extends React.Component {
     }
     
     nextRound() {
+        if (matchesErrorState) {
+            toast("Still no pairings possible.");
+            return;
+        }
         if (matchesComplete < pairings.length) {
             //toast("matchescomplete " + matchesComplete + " vs " + pairings.length);
             toast('Please complete all pairings to generate a new round');
@@ -338,8 +346,6 @@ class Pairings extends React.Component {
         }
         
         round++;
-        
-        $(".active").removeClass("active")
         
         newPairings();
         $("#bye").parent().addClass("active");
@@ -372,6 +378,7 @@ class Pairings extends React.Component {
         players = [];
         pairingsHistory = [];
         rounds = [];
+        matchesErrorState = false;
         ReactDOM.render(
             <Initialize />,
             document.getElementById('root')
@@ -444,6 +451,7 @@ let currentPairings = pairings;
 let pairingsHistory = [];
 let rounds = [];
 let round;
+let matchesErrorState;
 
 let numRounds = () => rounds.length - 1;
 
