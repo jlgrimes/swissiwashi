@@ -138,16 +138,15 @@ let newPairings = () => {
         
         let newSecondPlayerPos = '', newSecondPlayerPosPos = '';
         while (findPlayedIndex(firstPlayer, secondPlayer.name) && matchPointTierSpliced.length > 0) {
-            //console.log('first loop');
             if (matchPointTierSpliced.length > 1) {
                 newSecondPlayerPosPos = Math.floor(Math.random() * matchPointTierSpliced.length);
                 newSecondPlayerPos = matchPointTierSpliced[newSecondPlayerPosPos];
+                secondPlayerPos = newSecondPlayerPos;
                 secondPlayer = findPlayer(tempPlayers[newSecondPlayerPos].name);
             }
             else {
                 newSecondPlayerPosPos = 0;
             }
-            
             matchPointTierSpliced.splice(newSecondPlayerPosPos, 1);
         }
         
@@ -156,6 +155,7 @@ let newPairings = () => {
             if (restOfPlayersSpliced.length > 1) {
                 newSecondPlayerPosPos = Math.floor(Math.random() * restOfPlayersSpliced.length);
                 newSecondPlayerPos = restOfPlayersSpliced[newSecondPlayerPosPos];
+                secondPlayerPos = newSecondPlayerPos;
                 secondPlayer = findPlayer(tempPlayers[newSecondPlayerPos].name);
             }
             else {
@@ -251,8 +251,8 @@ class GeneratePairings extends React.Component {
             nextPlayerObj.played.push({name: thisPlayerObj.name, result: "loss"});
             
             matchesComplete++;
-            this.setState({players: players});
-            
+            //this.setState({players: players});
+            this.forceUpdate();
             //currentPairings = pairingsHistory[pairingHistory.length - 1];
         }
     
@@ -405,6 +405,7 @@ class Pairings extends React.Component {
         if (round != "DONE") {
             return(<div class="container">
                 <h1 id="round-number">Round {round}</h1>
+                <p>Click on a player to assign the win, and click on vs to assign both players the tie.</p>
                 <GeneratePairings round={0} />
                 <button class="btn" onClick={() => this.nextRound()}>Next Round</button>
                 <button class="btn" onClick={() => this.endTournament()}>End Tournament</button>
