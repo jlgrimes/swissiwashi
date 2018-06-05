@@ -58,11 +58,9 @@ let resistance = player => {
 
 ### Known Issues
 
-* No way to tie a match (ideally click vs)
 * Can't drop a player from the tournament
 * vs formatted weird
 * Floating integers don't work?
-* No way to cap if no pairings possible
 
 ### Features in Progress
 
