@@ -1,6 +1,6 @@
 POM (Packala Open Manager) is a lightweight TOM clone written in React for people who don't have access to TOM or would prefer something more lightweight. POM is only to be used for *unsanctioned* events.
 
-Everything I'm going to say below is essentially a carbon copy [Chris Schemanske's awesome article on how this stuff works](https://sixprizes.com/tiebreakers/), I just put it into code.
+Everything I'm going to say in the calculations section is essentially a carbon copy of [Chris Schemanske's awesome article on how this stuff works](https://sixprizes.com/tiebreakers/), I just put it into code.
 
 ## Data Structures
 
@@ -20,6 +20,10 @@ player = {
 Players in the "played" array are indeed stored as strings instead of objects, and dereferenced when I need the actual player. That's because JSON can't stringify circular objects... nor do I want to deal with them.
 
 For pairings, the array is sorted by match points first (calculated below), then resistance (also calculated balow).
+
+## Rounds
+
+Recommended rounds numbers are taken from [the appendix of the official Magic rulings](https://blogs.magicjudges.org/rules/mtr-appendix-e/) (because Pokemon doesn't have a site like this to my knowledge).
 
 ## Calculations
 

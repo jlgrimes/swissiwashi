@@ -10,3 +10,8 @@
 .btn {
     margin: 5px
 }
+
+.vcenter {
+    display: flex;
+    align-items: center;
+}

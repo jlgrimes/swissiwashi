@@ -74,7 +74,15 @@ class Initialize extends React.Component {
                 <h2>POM</h2>
                 <h4>Packala Open Manager</h4>
                 <a href="https://github.com/comp0cker/pom">Open-Sourced</a>
-                <input placeholder="Enter player name" id="player-input" onChange={this.handleChange} onKeyPress={(e) => this.handleKeyPress(e)} />
+                
+                <div class="row">
+                    <input type="number" id="number-rounds" placeholder="Number of Rounds"/>
+                    <label for="number-rounds">Recommended: {recommendedRounds()}</label>
+                </div>
+                
+                <div class="row">
+                    <input placeholder="Enter player name" id="player-input" onChange={this.handleChange} onKeyPress={(e) => this.handleKeyPress(e)} />
+                </div>
                 <button onClick={() => this.addPlayer()} class="btn"><i class="material-icons left">person_add</i>Enter Player</button>
                 <button onClick={() => this.startTournament()} class="btn"><i class="material-icons left">input</i>Start Tournament</button>
                 <div id="pairings" class="collection">
@@ -133,8 +141,8 @@ let newPairings = () => {
         let secondPlayer = findPlayer(tempPlayers[secondPlayerPos].name);
         
         // WIPPPPPP
-        let matchPointTierSpliced = arrayOfPositions(0, matchPointTierRange); 
-        let restOfPlayersSpliced = arrayOfPositions(matchPointTierRange, tempPlayers.length);
+        let matchPointTierSpliced = range(0, matchPointTierRange); 
+        let restOfPlayersSpliced = range(matchPointTierRange, tempPlayers.length);
         
         let newSecondPlayerPos = '', newSecondPlayerPosPos = '';
         while (findPlayedIndex(firstPlayer, secondPlayer.name) && matchPointTierSpliced.length > 0) {
@@ -452,11 +460,27 @@ let currentPairings = pairings;
 let pairingsHistory = [];
 let rounds = [];
 let round;
+
+function recommendedRounds() {
+    let num = players.length;
+    
+    if (num <= 4) return 2;
+    if (num <= 8) return 3;
+    if (num <= 16) return 4;
+    if (num <= 32) return 5;
+    if (num <= 64) return 6;
+    if (num <= 128) return 7;
+    if (num <= 226) return 8;
+    if (num <= 409) return 9;
+    
+    return 10;
+}
+
 let matchesErrorState;
 
 let numRounds = () => rounds.length - 1;
 
-function arrayOfPositions (lowerBound, upperBound) {
+function range (lowerBound, upperBound) {
     let arr = [];
     
     for (let i = lowerBound; i < upperBound; i++)
@@ -492,7 +516,10 @@ let matchesComplete;
 
 let matchPoints = player => player.wins * 3 + player.ties;
 
-let displayPlayer = p => p.name + " (" + wins(p) + "-" + p.losses + "-" + p.ties + " (" + matchPoints(p) + ")) " + resistanceDisplay(p) + "%";
+function displayPlayer(p) {
+    if (p == "bye") return "BYE";
+    return (p.name + " (" + wins(p) + "-" + p.losses + "-" + p.ties + " (" + matchPoints(p) + ")) " + resistanceDisplay(p) + "%");
+} 
 
 let wins = player => player.wins;
 
@@ -515,6 +542,8 @@ function findPlayedIndex(player, playedName) {
 let winPercentage = player => Math.max(0.25, (resistanceWins(player) + player.ties / 2) / (resistanceWins(player) + player.ties + player.losses));
 
 let resistance = (player) => {
+    if (player == "bye") return;
+    
     let resistanceTotal = 0;
     for (let p in player.played)
         resistanceTotal += winPercentage(findPlayer(player.played[p].name));
