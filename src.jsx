@@ -2,17 +2,27 @@ class Initialize extends React.Component {
     constructor() {
         super();
         this.state = {players: players};
-        this.handleChange = this.handleChange.bind(this);
+        this.handleNameChange = this.handleNameChange.bind(this);
+        this.handleRoundChange = this.handleRoundChange.bind(this);
         this.startTournament = this.startTournament.bind(this);
         this.loadPreset = this.loadPreset.bind(this);
         this.addPlayer = this.addPlayer.bind(this);
         this.deletePlayer = this.deletePlayer.bind(this);
         
         matchesErrorState = false;
+        $("#number-rounds").val(0);
+        
+        numRounds = recommendedRounds();
+        this.forceUpdate();
     }
     
-    handleChange(event) {
+    handleNameChange(event) {
         this.setState({newPlayer: event.target.value});
+    }
+    
+    handleRoundChange(event) {
+        numRounds = event.target.value;
+        this.forceUpdate();
     }
     
     handleKeyPress(target) {
@@ -45,6 +55,10 @@ class Initialize extends React.Component {
     
         $("#player-input").val("");
         toast(this.state.newPlayer + " added!");
+        numRounds = recommendedRounds();
+        
+        numRounds = recommendedRounds();
+        this.forceUpdate();
     }
     
     deletePlayer(e) {
@@ -57,6 +71,9 @@ class Initialize extends React.Component {
         players = JSON.parse(JSON.stringify(presetPlayers));
         this.setState({players: presetPlayers});
         toast("Preset loaded!");
+        //$("#number-rounds").val(recommendedRounds());
+        numRounds = recommendedRounds();
+        this.forceUpdate();
     }
     
     startTournament() {
@@ -76,12 +93,15 @@ class Initialize extends React.Component {
                 <a href="https://github.com/comp0cker/pom">Open-Sourced</a>
                 
                 <div class="row">
-                    <input type="number" id="number-rounds" placeholder="Number of Rounds"/>
-                    <label for="number-rounds">Recommended: {recommendedRounds()}</label>
+                    <div class="input-field">
+                        <input type="number" value={numRounds} id="number-rounds" placeholder="Number of Rounds" onChange={this.handleRoundChange} />
+                        <label class="active" for="number-rounds">Number of Rounds</label>
+                        <span class="helper-text" for="number-rounds">Recommended: {recommendedRounds()}</span>
+                    </div>
                 </div>
                 
                 <div class="row">
-                    <input placeholder="Enter player name" id="player-input" onChange={this.handleChange} onKeyPress={(e) => this.handleKeyPress(e)} />
+                    <input placeholder="Enter player name" id="player-input" onChange={this.handleNameChange} onKeyPress={(e) => this.handleKeyPress(e)} />
                 </div>
                 <button onClick={() => this.addPlayer()} class="btn"><i class="material-icons left">person_add</i>Enter Player</button>
                 <button onClick={() => this.startTournament()} class="btn"><i class="material-icons left">input</i>Start Tournament</button>
@@ -197,7 +217,10 @@ let newPairings = () => {
     
     pairingsHistory.push(JSON.parse(JSON.stringify(pairings)));
     currentPairings = pairings;
-    rounds.push(round);
+    
+    if (rounds < numRounds)
+        rounds.push(round);
+    
     $(".active").removeClass("active")
 }
 
@@ -410,7 +433,7 @@ class Pairings extends React.Component {
     }
     
     renderRounds() {
-        if (round != "DONE") {
+        if (round != "DONE" && round <= numRounds) {
             return(<div class="container">
                 <h1 id="round-number">Round {round}</h1>
                 <p>Click on a player to assign the win, and click on vs to assign both players the tie.</p>
@@ -420,6 +443,7 @@ class Pairings extends React.Component {
             </div>);
                               }
         else {
+            currentPairings = pairingsHistory[0];
             return (
             <div class="container">
                 <h1>Final Standings</h1>
@@ -460,6 +484,7 @@ let currentPairings = pairings;
 let pairingsHistory = [];
 let rounds = [];
 let round;
+let numRounds;
 
 function recommendedRounds() {
     let num = players.length;
@@ -477,8 +502,6 @@ function recommendedRounds() {
 }
 
 let matchesErrorState;
-
-let numRounds = () => rounds.length - 1;
 
 function range (lowerBound, upperBound) {
     let arr = [];
