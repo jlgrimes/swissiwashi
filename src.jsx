@@ -65,6 +65,9 @@ class Initialize extends React.Component {
         toast(e.target.id + " dropped!");
         players.splice(players.findIndex(p => p.name == e.target.id), 1);
         $("[id='" + e.target.id + "']").remove();
+        
+        numRounds = recommendedRounds();
+        this.forceUpdate();
     }
     
     loadPreset() {
@@ -218,8 +221,7 @@ let newPairings = () => {
     pairingsHistory.push(JSON.parse(JSON.stringify(pairings)));
     currentPairings = pairings;
     
-    if (rounds < numRounds)
-        rounds.push(round);
+    rounds.push(round);
     
     $(".active").removeClass("active")
 }
@@ -258,20 +260,9 @@ class GeneratePairings extends React.Component {
             // Say we have a result
             e.target.parentElement.classList.add('active');
             
-            // Find the name of the next player
-            let nextPlayer;
-            if (e.target.previousSibling == null)
-                nextPlayer = e.target.nextSibling.nextSibling.id;
-            else
-                nextPlayer = e.target.previousSibling.previousSibling.id;
-            
-            // We don't care about byes
-            if (nextPlayer == "bye")
-                return;
-            
             // Convert the names of the two players into objects
             let thisPlayerObj = findPlayer(e.target.id);
-            let nextPlayerObj = findPlayer(nextPlayer);
+            let nextPlayerObj = getPairedPlayerHTML(e.target);
             
             // Adds win/losses to player objects            
             thisPlayerObj.wins++;
@@ -354,6 +345,7 @@ class Pairings extends React.Component {
         this.renderRounds = this.renderRounds.bind(this);
         this.newTournament = this.newTournament.bind(this);
         this.renderTabBar = this.renderTabBar.bind(this);
+        this.dropPlayer = this.dropPlayer.bind(this);
     }
     
     componentDidMount() {
@@ -366,6 +358,11 @@ class Pairings extends React.Component {
     }
     
     nextRound() {
+        if (round == numRounds) {
+            currentPairings = pairingsHistory[0];
+            this.endTournament();
+            return;
+        }
         if (matchesErrorState) {
             toast("Still no pairings possible.");
             return;
@@ -432,18 +429,60 @@ class Pairings extends React.Component {
         );
     }
     
+    dropPlayer() {
+        var name = $("#dropped-player-name").val();
+        
+        // Returns an exception if the player entered is not in the tournament
+        if (!findPlayer(name)) {
+            toast(name + " is not in the tournament!");
+            return;
+        }
+        
+        let HTMLplayerDropped = document.getElementById(name);
+        
+        // If the player dropped hasn't completed their round yet, give the other player the win
+        if (!HTMLplayerDropped.parentElement.classList.contains("active")) {
+            let HTMLpairedPlayer = getPairedPlayerHTML(HTMLplayerDropped);
+            console.log(HTMLpairedPlayer.name);
+            HTMLpairedPlayer.wins++;
+            HTMLplayerDropped.parentElement.classList.add("active");
+            this.forceUpdate();
+        }
+        
+        players.splice(findPlayerIndex(name), 1);
+        
+        toast(name + " has been dropped!");
+        
+        // Destroys the modal
+        var instance = M.Modal.getInstance(document.getElementById("drop-modal"));
+        instance.close();
+    }
+    
     renderRounds() {
         if (round != "DONE" && round <= numRounds) {
             return(<div class="container">
                 <h1 id="round-number">Round {round}</h1>
                 <p>Click on a player to assign the win, and click on vs to assign both players the tie.</p>
                 <GeneratePairings round={0} />
-                <button class="btn" onClick={() => this.nextRound()}>Next Round</button>
-                <button class="btn" onClick={() => this.endTournament()}>End Tournament</button>
+                <button class="btn" onClick={() => this.nextRound()}><i class="material-icons left">forward</i>Next Round</button>
+                <button class="btn" onClick={() => this.endTournament()}><i class="material-icons left">done</i>End Tournament</button>
+                <a class="waves-effect waves-light btn modal-trigger" href="#drop-modal"><i class="material-icons left">remove_circle</i>Drop Player</a>
+
+              <div id="drop-modal" class="modal">
+                <div class="modal-content">
+                  <h4>Drop Player</h4>
+                  <p>Type the name of the player you'd like to drop</p>
+                    <input id="dropped-player-name"></input>
+                </div>
+                <div class="modal-footer">
+                  <button class="btn" onClick={() => this.dropPlayer()}>Drop</button>
+                </div>
+              </div>
+                    
             </div>);
                               }
         else {
-            currentPairings = pairingsHistory[0];
+            //currentPairings = pairingsHistory[0];
             return (
             <div class="container">
                 <h1>Final Standings</h1>
@@ -486,19 +525,9 @@ let rounds = [];
 let round;
 let numRounds;
 
+// From https://bocoup.com/blog/find-the-closest-power-of-2-with-javascript
 function recommendedRounds() {
-    let num = players.length;
-    
-    if (num <= 4) return 2;
-    if (num <= 8) return 3;
-    if (num <= 16) return 4;
-    if (num <= 32) return 5;
-    if (num <= 64) return 6;
-    if (num <= 128) return 7;
-    if (num <= 226) return 8;
-    if (num <= 409) return 9;
-    
-    return 10;
+    return Math.round(Math.log(players.length) / Math.log(2));
 }
 
 let matchesErrorState;
@@ -554,12 +583,30 @@ let findPlayer = (name) => {
     return false;
 };
 
+let findPlayerIndex = (name) => {
+    for (let p in players)
+        if (players[p].name == name)
+            return p;
+    
+    return -1;
+};
+
 function findPlayedIndex(player, playedName) {
     for (let p in player.played)
         if (player.played[p].name == playedName)
             return p;
     
     return false;
+}
+
+function getPairedPlayerHTML(firstPlayer) {
+    let nextPlayer;
+    if (firstPlayer.previousSibling == null)
+        nextPlayer = firstPlayer.nextSibling.nextSibling.id;
+    else
+        nextPlayer = firstPlayer.previousSibling.previousSibling.id;
+    
+    return findPlayer(nextPlayer);
 }
 
 let winPercentage = player => Math.max(0.25, (resistanceWins(player) + player.ties / 2) / (resistanceWins(player) + player.ties + player.losses));

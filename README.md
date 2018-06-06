@@ -23,7 +23,7 @@ For pairings, the array is sorted by match points first (calculated below), then
 
 ## Rounds
 
-Recommended rounds numbers are taken from [the appendix of the official Magic rulings](https://blogs.magicjudges.org/rules/mtr-appendix-e/) (because Pokemon doesn't have a site like this to my knowledge).
+Recommended rounds numbers are taken from powers of two (9-16 players: 4 rounds, 17-32 players: 5 rounds, etc).
 
 ## Calculations
 
@@ -62,7 +62,7 @@ let resistance = player => {
 
 ### Known Issues
 
-* Can't drop a player from the tournament
+* Dropping a player does weird things to resistance
 * vs formatted weird
 * Floating integers don't work?
 
