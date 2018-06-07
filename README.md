@@ -62,10 +62,9 @@ let resistance = player => {
 
 ### Known Issues
 
-* Dropping a player does weird things to resistance
 * Sometimes round pairings don't want to go all the way through
 * vs formatted weird
-* Floating integers don't work?
+* Can't drop preset players?
 
 ### Features in Progress
 

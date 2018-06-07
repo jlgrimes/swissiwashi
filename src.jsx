@@ -63,12 +63,12 @@ class Initialize extends React.Component {
     
     deletePlayer(e) {
         toastr.success(e.target.id + " dropped!");
-        console.log(players.findIndex(p => p.name == e.target.id));
+        //console.log(players.findIndex(p => p.name == e.target.id));
         players.splice(players.findIndex(p => p.name == e.target.id), 1);
         //$("[id='" + e.target.id + "']").remove();
         
         numRounds = recommendedRounds();
-        console.log(players);
+        //console.log(players);
         this.forceUpdate();
     }
     
@@ -92,7 +92,7 @@ class Initialize extends React.Component {
     render() {
         let players = this.state.players;
         return (
-            <div class="container">
+            <div class="container animated fadeIn" id="initialize">
                 <h1>POM</h1>
                 <h2>Packala Open Manager</h2>
                 
@@ -114,7 +114,12 @@ class Initialize extends React.Component {
                 </div>
                 
                 <button onClick={() => this.startTournament()} class="btn btn-primary">Start Tournament</button>
+                
                 <button class="btn btn-default" onClick={() => this.loadPreset()}>Load Preset Players</button>
+                
+                <button class="btn btn-danger" onClick={() => {$("#initialize").addClass("animated hinge")}}>Destory this page</button>
+                
+                <h5 id="player-count">{displayPlayerCount()}</h5>
                 
                 <div id="pairings" class="list-group">
                     {players.map(p => <a class="list-group-item" onClick={(e) => this.deletePlayer(e)} id={p.name}>{p.name}</a>)}
@@ -123,6 +128,11 @@ class Initialize extends React.Component {
             </div>
         );
     }
+}
+
+let displayPlayerCount = () => {
+    if (players.length == 1) return "1 player";
+    return players.length + " players";
 }
 
 let newPairings = () => {
@@ -145,7 +155,8 @@ let newPairings = () => {
     if (tempPlayers.length % 2 != 0) {
         byePlayer = {
                 first: JSON.parse(JSON.stringify(tempPlayers[tempPlayers.length - 1])),
-                second: "bye"
+                second: "bye",
+            complete: true
             };
         
         // We don't want to include this player in for pairing
@@ -190,7 +201,7 @@ let newPairings = () => {
         }
         
         while (findPlayedIndex(firstPlayer, secondPlayer.name) && restOfPlayersSpliced.length > 0) {
-            //console.log('second loop');
+            //console.log('second loop'); 
             if (restOfPlayersSpliced.length > 1) {
                 newSecondPlayerPosPos = Math.floor(Math.random() * restOfPlayersSpliced.length);
                 newSecondPlayerPos = restOfPlayersSpliced[newSecondPlayerPosPos];
@@ -209,7 +220,7 @@ let newPairings = () => {
             matchesComplete = pairings.length;
             matchesErrorState = true;
             round--;
-            $(".collection-item").addClass("active");
+            //$(".collection-item").addClass("active");
             return;
         }
         
@@ -219,9 +230,12 @@ let newPairings = () => {
 
         pairings.push({
             first: firstPlayer,
-            second: secondPlayer
+            second: secondPlayer,
+            complete: false
         });
     }
+    
+    //$(".active").removeClass("active")
     
     if (byePlayer != "")
         pairings.push(byePlayer);
@@ -230,8 +244,7 @@ let newPairings = () => {
     currentPairings = pairings;
     
     rounds.push(round);
-    
-    $(".active").removeClass("active")
+    //this.forceUpdate();
 }
 
 class GeneratePairings extends React.Component {
@@ -240,10 +253,12 @@ class GeneratePairings extends React.Component {
             this.displayPlayer = this.displayPlayer.bind(this);
             this.handleWin = this.handleWin.bind(this);
             this.handleTie = this.handleTie.bind(this);
-            
+
             // If it's on the pairings page, generate new pairings. Else, recall the round we were on
             newPairings();
-            this.state = {players: props.players};
+            
+            // Reinitializes the filter bar
+            searchQuery = "";
         }
     
         componentDidMount() {
@@ -266,7 +281,8 @@ class GeneratePairings extends React.Component {
                 return;
             
             // Say we have a result
-            e.target.parentElement.parentElement.classList.add('active');
+            //e.target.parentElement.parentElement.classList.add('active');
+            this.completePairing(e.target.id);
             
             // Convert the names of the two players into objects
             let thisPlayerObj = findPlayer(e.target.id);
@@ -292,10 +308,12 @@ class GeneratePairings extends React.Component {
                 return;
             
             // Say we have a result
-            e.target.parentElement.parentElement.classList.add('active');
-            
+            //e.target.parentElement.parentElement.classList.add('active');  
+        
             // Find the name of the next player
             let thisPlayer = e.target.previousSibling.id, nextPlayer = e.target.nextSibling.id;
+        
+            completePairing(thisPlayer);  
 
             if (nextPlayer == "bye")
                 return;
@@ -313,7 +331,7 @@ class GeneratePairings extends React.Component {
             nextPlayerObj.played.push({name: thisPlayerObj.name, result: "tie"});
             
             matchesComplete++;
-            this.setState({players: players});
+            this.forceUpdate();
             
             //currentPairings = pairingsHistory[pairingHistory.length - 1];
     }
@@ -321,8 +339,8 @@ class GeneratePairings extends React.Component {
         render() {
             return (
                 <div>
-                <div class="list-group">{currentPairings.map((p, i) => 
-                    <div class="list-group-item">
+                <div class="list-group">{currentPairings.filter(p => p.first.name.indexOf(searchQuery) >= 0 || (p.second != "bye" && p.second.name.indexOf(searchQuery) >= 0)).map((p, i) => 
+                    <div class={"list-group-item pairing-item " + uh(p)}>
                                                                  <div class="row">
                         {this.displayPlayer(p.first)}
                         <div class="col" onClick={(e) => this.handleTie(e)}> vs </div>
@@ -334,6 +352,12 @@ class GeneratePairings extends React.Component {
             );
         }
     }
+
+let uh = (p) => {
+    //console.log(p);
+    if (p.complete) return "active ";
+    return "";
+}
 
 let renderUnclickablePlayers = () => <div class="tab-content">{pairingsHistory.map((curr, currPos) =>
                 <div id={"round-" + addOne(currPos)} class="list-group tab-pane fade">{curr.map((p, i) => 
@@ -350,6 +374,7 @@ class Pairings extends React.Component {
     constructor(props) {
         super(props);
         round = 1;
+        
         this.nextRound = this.nextRound.bind(this);
         this.endTournament = this.endTournament.bind(this);
         this.renderRounds = this.renderRounds.bind(this);
@@ -357,12 +382,14 @@ class Pairings extends React.Component {
         this.renderTabBar = this.renderTabBar.bind(this);
         this.dropPlayer = this.dropPlayer.bind(this);
         this.updateTabs = this.updateTabs.bind(this);
+        this.searchBarUpdate = this.searchBarUpdate.bind(this);
+        this.shadeRoundResult = this.shadeRoundResult.bind(this);
     }
     
     componentDidMount() {
          //M.AutoInit();
         //$(".tabs").tabs({swipeable: true});
-        $("#bye").parent().parent().addClass("active");
+        //$("#bye").parent().parent().addClass("active");
     }
     
     componentDidUpdate() {
@@ -388,7 +415,7 @@ class Pairings extends React.Component {
         round++;
         
         newPairings();
-        $("#bye").parent().parent().addClass("active");
+        //$("#bye").parent().parent().addClass("active");
         
         this.forceUpdate();
     }
@@ -452,7 +479,9 @@ class Pairings extends React.Component {
             let HTMLpairedPlayer = getPairedPlayerHTML(HTMLplayerDropped);
             console.log(HTMLpairedPlayer.name);
             HTMLpairedPlayer.wins++;
-            HTMLplayerDropped.parentElement.parentElement.classList.add("active");
+            
+            completePairing(name);
+            //HTMLplayerDropped.parentElement.parentElement.classList.add("active");
             matchesComplete++;
             this.forceUpdate();
         }
@@ -467,13 +496,19 @@ class Pairings extends React.Component {
             return(<div class="container">
                 <h1 id="round-number">Round {round}</h1>
                 <p>Click on a player to assign the win, and click on vs to assign both players the tie.</p>
+                
+                <div class="md-form">
+                    <i class="fa fa-search prefix"></i>
+                    <input type="text" class="form-control" placeholder="Search for a player" onChange={(e) => this.searchBarUpdate(e)}></input>
+                </div>
+       
                 <GeneratePairings round={0} />
 
                 <button class="btn btn-primary" onClick={() => this.nextRound()}>Next Round</button>
                     
-                <button class="btn btn-default" onClick={() => this.endTournament()}>End Tournament</button>
+                <button class="btn btn-secondary" data-toggle="modal" data-target="#drop-modal">Drop Player</button>
                     
-                <button class="btn btn-warning" data-toggle="modal" data-target="#drop-modal">Drop Player</button>
+                <button class="btn btn-warning" onClick={() => this.endTournament()}>Force End Tournament</button>
                     
                 <div class="modal fade" id="drop-modal" tabindex="-1" role="dialog" aria-labelledby="drop-modal-label" aria-hidden="true">
                     <div class="modal-dialog" role="document">
@@ -486,7 +521,11 @@ class Pairings extends React.Component {
                             </div>
                             <div class="modal-body">
                                 <p>Type the name of the player you'd like to drop</p>
-                                <input type="text" id="dropped-player-name" class="form-control" placeholder="Player name"></input>
+                                
+                                <div class="md-form">
+                                    <input type="text" id="dropped-player-name" class="form-control" placeholder="Player name"></input>
+                                </div>
+                                
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-primary" onClick={() => this.dropPlayer()}>Drop</button>
@@ -500,7 +539,7 @@ class Pairings extends React.Component {
         else {
             //currentPairings = pairingsHistory[0];
             return (
-            <div class="container">
+            <div class="container animated fadeIn">
                 <h1>Final Standings</h1>
                 {this.renderTabBar()}
                 {renderUnclickablePlayers()}
@@ -515,9 +554,9 @@ class Pairings extends React.Component {
                                      
                                      <div id={p.name + "-body"} class="collapse show" aria-labelledby={"#" + p.name} data-parent="#accordion">
                                          <div class="card-body">
-                                             <ul>
+                                             <ul class="list-group">
                                             {p.played.map((q, j) =>
-                                                           <li>Round {addOne(j)} {q.name} - {q.result}</li>
+                                                           <li class={"list-group-item " + this.shadeRoundResult(q.result)}>Round {addOne(j)} {q.name} - {q.result}</li>
                                                            )}
                                             </ul>
                                          </div> 
@@ -528,6 +567,22 @@ class Pairings extends React.Component {
             </div>
         );
         }
+    }
+    
+    shadeRoundResult(result) {
+        if (result == "win") return "list-group-item-success";
+        if (result == "tie") return "list-group-item-warning";
+        if (result == "loss") return "list-group-item-danger";
+    }
+    
+    searchBarUpdate(event) {
+        searchQuery = event.target.value;
+        this.forceUpdate()
+        //console.log(searchQuery);
+        
+        //$(".pairing-item").addClass("animated bounce");
+        
+        //$(".pairing-item").each(() => {$(this).toggleClass("animated bounce")});
     }
     
     render() {   
@@ -546,6 +601,7 @@ let pairingsHistory = [];
 let rounds = [];
 let round;
 let numRounds;
+let searchQuery;
 
 function recommendedRounds() {
     let n = players.length, off = 1;
@@ -589,6 +645,12 @@ function renderTab(r) {
 let presetPlayers = newPlayer(['Player 1', 'Player 2', 'Player 3', 'Player 4', 'Player 5', 'Player 6', 'Player 7', 'Player 8', 'Player 9', 'Player 10']);
 
 let matchesComplete;
+
+function completePairing(player) {
+            for (let p in pairings)
+                if (pairings[p].first.name == player || pairings[p].second.name == player)
+                    pairings[p].complete = true;
+        }
 
 let matchPoints = player => player.wins * 3 + player.ties;
 
@@ -644,12 +706,12 @@ let resistance = (player) => {
         resistanceTotal += winPercentage(findPlayer(player.played[p].name));
     
     resistanceTotal /= player.played.length;
-    return resistanceTotal;
+    return resistanceTotal * 100;
 }
 
 let resistanceWins = player => player.wins - player.byes;
 
-let resistanceDisplay = player => Number.parseFloat(resistance(player)).toFixed(4);
+let resistanceDisplay = player => Number.parseFloat(resistance(player)).toFixed(2);
 
 function comparePlayers(thisPlayer, nextPlayer) {
     // We want the list in descending order
