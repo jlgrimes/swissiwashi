@@ -282,7 +282,7 @@ class GeneratePairings extends React.Component {
             
             // Say we have a result
             //e.target.parentElement.parentElement.classList.add('active');
-            this.completePairing(e.target.id);
+            completePairing(e.target.id);
             
             // Convert the names of the two players into objects
             let thisPlayerObj = findPlayer(e.target.id);
