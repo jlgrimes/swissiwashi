@@ -15,3 +15,19 @@
 .btn.btn-outline-default {
     margin: 5px;
 }
+
+html {
+    position: relative;
+    min-height: 100%;
+}
+
+body {
+    margin-bottom: 100px
+}
+
+footer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    beight: 100px;
+}

@@ -68,6 +68,7 @@ class Initialize extends React.Component {
         //$("[id='" + e.target.id + "']").remove();
         
         numRounds = recommendedRounds();
+        console.log(players);
         this.forceUpdate();
     }
     
@@ -94,7 +95,6 @@ class Initialize extends React.Component {
             <div class="container">
                 <h1>POM</h1>
                 <h2>Packala Open Manager</h2>
-                <a href="https://github.com/comp0cker/pom">Open-Sourced</a>
                 
                 <div class="row">
                     <div class="md-form input-group col s6">
@@ -335,8 +335,8 @@ class GeneratePairings extends React.Component {
         }
     }
 
-let renderUnclickablePlayers = () => pairingsHistory.map((curr, currPos) =>
-                <div id={"round-" + addOne(currPos)} class="list-group">{curr.map((p, i) => 
+let renderUnclickablePlayers = () => <div class="tab-content">{pairingsHistory.map((curr, currPos) =>
+                <div id={"round-" + addOne(currPos)} class="list-group tab-pane fade">{curr.map((p, i) => 
                     <div class="list-group-item">
                     <div class="row">
                         {displayPlayer(p.first)}
@@ -344,7 +344,7 @@ let renderUnclickablePlayers = () => pairingsHistory.map((curr, currPos) =>
                         {displayPlayer(p.second)}
                     </div>
                    </div>
-                )}</div>);
+                )}</div>)}</div>;
 
 class Pairings extends React.Component {
     constructor(props) {
@@ -426,15 +426,13 @@ class Pairings extends React.Component {
     
     renderTabBar() {
         return (
-            <nav>
-                <div class="nav-wrapper">
-                    <div class="col s12">
-                      {
-                              rounds.map(r => <a class="breadcrumb" href={"#round-" + r}>{renderTab(r)}</a>
-                                         )}
-                    </div>
-                </div>
-            </nav>
+                <ul class="nav nav-pills mb-3" role="tablist">
+                      {rounds.map(r => <li class="nav-item">
+                                            <a class="nav-link" data-toggle="tab" href={"#round-" + r} role="tab">
+                                                {renderTab(r)}
+                                            </a>
+                                        </li>)}
+                </ul>
         );
     }
     
@@ -462,10 +460,6 @@ class Pairings extends React.Component {
         players.splice(findPlayerIndex(name), 1);
         
         toastr.success(name + " has been dropped!");
-        
-        // Destroys the modal
-        var instance = M.Modal.getInstance(document.getElementById("drop-modal"));
-        instance.close();
     }
     
     renderRounds() {
@@ -479,18 +473,27 @@ class Pairings extends React.Component {
                     
                 <button class="btn btn-default" onClick={() => this.endTournament()}>End Tournament</button>
                     
-                <a class="btn btn-warning modal-trigger" href="#drop-modal">Drop Player</a>
-
-              <div id="drop-modal" class="modal">
-                <div class="modal-content">
-                  <h4>Drop Player</h4>
-                  <p>Type the name of the player you'd like to drop</p>
-                    <input id="dropped-player-name"></input>
+                <button class="btn btn-warning" data-toggle="modal" data-target="#drop-modal">Drop Player</button>
+                    
+                <div class="modal fade" id="drop-modal" tabindex="-1" role="dialog" aria-labelledby="drop-modal-label" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="drop-modal-label">Drop Player</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <p>Type the name of the player you'd like to drop</p>
+                                <input type="text" id="dropped-player-name" class="form-control" placeholder="Player name"></input>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-primary" onClick={() => this.dropPlayer()}>Drop</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="modal-footer">
-                  <button class="btn" onClick={() => this.dropPlayer()}>Drop</button>
-                </div>
-              </div>
                     
             </div>);
                               }
