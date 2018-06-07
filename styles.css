@@ -7,11 +7,11 @@
     background: silver;
 }
 
-.btn {
-    margin: 5px
-}
-
 .vcenter {
     display: flex;
     align-items: center;
+} 
+
+.btn.btn-outline-default {
+    margin: 5px;
 }

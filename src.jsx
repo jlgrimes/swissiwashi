@@ -32,12 +32,12 @@ class Initialize extends React.Component {
     
     addPlayer() {
         if (this.state.newPlayer == undefined || this.state.newPlayer == "") {
-            toast("Please input a name");
+            toastr.error("Please input a name");
             return;
         }
         
         if (findPlayer(this.state.newPlayer)) {
-            toast("Please input a unique name");
+            toastr.error("Please input a unique name");
             return;
         }
         
@@ -54,7 +54,7 @@ class Initialize extends React.Component {
         });
     
         $("#player-input").val("");
-        toast(this.state.newPlayer + " added!");
+        toastr.success(this.state.newPlayer + " added!");
         numRounds = recommendedRounds();
         
         numRounds = recommendedRounds();
@@ -62,9 +62,10 @@ class Initialize extends React.Component {
     }
     
     deletePlayer(e) {
-        toast(e.target.id + " dropped!");
+        toastr.success(e.target.id + " dropped!");
+        console.log(players.findIndex(p => p.name == e.target.id));
         players.splice(players.findIndex(p => p.name == e.target.id), 1);
-        $("[id='" + e.target.id + "']").remove();
+        //$("[id='" + e.target.id + "']").remove();
         
         numRounds = recommendedRounds();
         this.forceUpdate();
@@ -73,7 +74,7 @@ class Initialize extends React.Component {
     loadPreset() {
         players = JSON.parse(JSON.stringify(presetPlayers));
         this.setState({players: presetPlayers});
-        toast("Preset loaded!");
+        toastr.success("Preset loaded!");
         //$("#number-rounds").val(recommendedRounds());
         numRounds = recommendedRounds();
         this.forceUpdate();
@@ -91,27 +92,34 @@ class Initialize extends React.Component {
         let players = this.state.players;
         return (
             <div class="container">
-                <h2>POM</h2>
-                <h4>Packala Open Manager</h4>
+                <h1>POM</h1>
+                <h2>Packala Open Manager</h2>
                 <a href="https://github.com/comp0cker/pom">Open-Sourced</a>
                 
                 <div class="row">
-                    <div class="input-field">
-                        <input type="number" value={numRounds} id="number-rounds" placeholder="Number of Rounds" onChange={this.handleRoundChange} />
-                        <label class="active" for="number-rounds">Number of Rounds</label>
-                        <span class="helper-text" for="number-rounds">Recommended: {recommendedRounds()}</span>
+                    <div class="md-form input-group col s6">
+                        <input type="text" class="form-control" placeholder="Player name" id="player-input" onChange={this.handleNameChange} onKeyPress={(e) => this.handleKeyPress(e)} />
+                      <div class="input-group-append">
+                        <button class="btn btn-default waves-effect m-0" type="button" onClick={() => this.addPlayer()}>Enter</button>
+                      </div>
+                    </div>
+                    
+                    <div class="md-form input-group col s3">
+                        <input type="number" value={numRounds} placeholder="Number of Rounds" class="form-control" id="number-rounds" onChange={this.handleRoundChange} />
+
+                        <div class="input-group-append">
+                            <span class="input-group-text" id="basic-addon2">Rounds</span>
+                          </div>
                     </div>
                 </div>
                 
-                <div class="row">
-                    <input placeholder="Enter player name" id="player-input" onChange={this.handleNameChange} onKeyPress={(e) => this.handleKeyPress(e)} />
+                <button onClick={() => this.startTournament()} class="btn btn-primary">Start Tournament</button>
+                <button class="btn btn-default" onClick={() => this.loadPreset()}>Load Preset Players</button>
+                
+                <div id="pairings" class="list-group">
+                    {players.map(p => <a class="list-group-item" onClick={(e) => this.deletePlayer(e)} id={p.name}>{p.name}</a>)}
                 </div>
-                <button onClick={() => this.addPlayer()} class="btn"><i class="material-icons left">person_add</i>Enter Player</button>
-                <button onClick={() => this.startTournament()} class="btn"><i class="material-icons left">input</i>Start Tournament</button>
-                <div id="pairings" class="collection">
-                    {players.map(p => <a class="collection-item" onClick={(e) => this.deletePlayer(e)} id={p.name}>{p.name}</a>)}
-                </div>
-                <button class="btn btn-primary" onClick={() => this.loadPreset()}><i class="material-icons left">file_download</i>Load Preset Players</button>
+                
             </div>
         );
     }
@@ -197,7 +205,7 @@ let newPairings = () => {
         }
         
         if (findPlayedIndex(firstPlayer, secondPlayer.name)) {
-            toast("No pairings possible.");
+            toastr.error("No pairings possible.");
             matchesComplete = pairings.length;
             matchesErrorState = true;
             round--;
@@ -239,26 +247,26 @@ class GeneratePairings extends React.Component {
         }
     
         componentDidMount() {
-            M.AutoInit();
+            //M.AutoInit();
         }
     
         displayPlayer(p) {
             //this.setState({players: players});
             //alert(p.name + " " + p.wins);
             if (p == "bye")
-                return <div class="col s6" id="bye">BYE</div>;
+                return <div class="col" id="bye">BYE</div>;
             return (
-                <div class="col s6" id={p.name} onClick={(e) => this.handleWin(e)}>{displayPlayer(p)}</div>
+                <div class="col" id={p.name} onClick={(e) => this.handleWin(e)}>{displayPlayer(p)}</div>
             );
         }
     
         handleWin(e) {
             // Make sure we don't already have a result
-            if (e.target.parentElement.classList.contains('active'))
+            if (e.target.parentElement.parentElement.classList.contains('active'))
                 return;
             
             // Say we have a result
-            e.target.parentElement.classList.add('active');
+            e.target.parentElement.parentElement.classList.add('active');
             
             // Convert the names of the two players into objects
             let thisPlayerObj = findPlayer(e.target.id);
@@ -280,11 +288,11 @@ class GeneratePairings extends React.Component {
     
     handleTie(e) {
                     // Make sure we don't already have a result
-            if (e.target.parentElement.classList.contains('active'))
+            if (e.target.parentElement.parentElement.classList.contains('active'))
                 return;
             
             // Say we have a result
-            e.target.parentElement.classList.add('active');
+            e.target.parentElement.parentElement.classList.add('active');
             
             // Find the name of the next player
             let thisPlayer = e.target.previousSibling.id, nextPlayer = e.target.nextSibling.id;
@@ -313,11 +321,13 @@ class GeneratePairings extends React.Component {
         render() {
             return (
                 <div>
-                <div class="collection">{currentPairings.map((p, i) => 
-                    <div class="row collection-item">
+                <div class="list-group">{currentPairings.map((p, i) => 
+                    <div class="list-group-item">
+                                                                 <div class="row">
                         {this.displayPlayer(p.first)}
-                        <div class="col s6 center-align" onClick={(e) => this.handleTie(e)}> vs </div>
+                        <div class="col" onClick={(e) => this.handleTie(e)}> vs </div>
                         {this.displayPlayer(p.second)}
+                                                                 </div>
                     </div>
                 )}</div>
                 </div>
@@ -325,15 +335,16 @@ class GeneratePairings extends React.Component {
         }
     }
 
-let renderUnclickablePlayers = () => <div>
-                <div class="collection">{currentPairings.map((p, i) => 
-                    <div class="row collection-item">
+let renderUnclickablePlayers = () => pairingsHistory.map((curr, currPos) =>
+                <div id={"round-" + addOne(currPos)} class="list-group">{curr.map((p, i) => 
+                    <div class="list-group-item">
+                    <div class="row">
                         {displayPlayer(p.first)}
                         <div class="col s6 center-align"> vs </div>
                         {displayPlayer(p.second)}
                     </div>
-                )}</div>
-                </div>
+                   </div>
+                )}</div>);
 
 class Pairings extends React.Component {
     constructor(props) {
@@ -341,50 +352,43 @@ class Pairings extends React.Component {
         round = 1;
         this.nextRound = this.nextRound.bind(this);
         this.endTournament = this.endTournament.bind(this);
-        this.loadRound = this.loadRound.bind(this);
         this.renderRounds = this.renderRounds.bind(this);
         this.newTournament = this.newTournament.bind(this);
         this.renderTabBar = this.renderTabBar.bind(this);
         this.dropPlayer = this.dropPlayer.bind(this);
+        this.updateTabs = this.updateTabs.bind(this);
     }
     
     componentDidMount() {
-         M.AutoInit();
-        $("#bye").parent().addClass("active");
+         //M.AutoInit();
+        //$(".tabs").tabs({swipeable: true});
+        $("#bye").parent().parent().addClass("active");
     }
     
     componentDidUpdate() {
-         M.AutoInit();
+         //M.AutoInit();
+        $('.collapse').collapse()
     }
     
     nextRound() {
         if (round == numRounds) {
-            currentPairings = pairingsHistory[0];
             this.endTournament();
             return;
         }
         if (matchesErrorState) {
-            toast("Still no pairings possible.");
+            toastr.error("Still no pairings possible.");
             return;
         }
         if (matchesComplete < pairings.length) {
             //toast("matchescomplete " + matchesComplete + " vs " + pairings.length);
-            toast('Please complete all pairings to generate a new round');
+            toastr.error('Please complete all pairings to generate a new round');
             return;
         }
         
         round++;
         
         newPairings();
-        $("#bye").parent().addClass("active");
-        
-        this.forceUpdate();
-    }
-    
-    loadRound(r) {
-        console.log(pairingsHistory);
-        currentPairings = pairingsHistory[r - 1];
-        console.log(currentPairings);
+        $("#bye").parent().parent().addClass("active");
         
         this.forceUpdate();
     }
@@ -412,20 +416,25 @@ class Pairings extends React.Component {
             document.getElementById('root')
         );
     }
+
+    updateTabs(r) {
+        //window.location = "#round" + r
+        //console.log("update");
+        //var instance = M.Tabs.getInstance(document.getElementById("tabs"));
+        //instance.updateTabIndicator();
+    }
     
     renderTabBar() {
         return (
-            <div class="row">
+            <nav>
+                <div class="nav-wrapper">
                     <div class="col s12">
-                      <ul class="tabs">{
-                              rounds.map(r => <li class="tab col s3">
-                                             <a onClick={() => this.loadRound(r)}>
-                                                 {renderTab(r)}
-                                             </a>
-                                         </li>)}
-                      </ul>
+                      {
+                              rounds.map(r => <a class="breadcrumb" href={"#round-" + r}>{renderTab(r)}</a>
+                                         )}
                     </div>
                 </div>
+            </nav>
         );
     }
     
@@ -434,24 +443,25 @@ class Pairings extends React.Component {
         
         // Returns an exception if the player entered is not in the tournament
         if (!findPlayer(name)) {
-            toast(name + " is not in the tournament!");
+            toastr.error(name + " is not in the tournament!");
             return;
         }
         
         let HTMLplayerDropped = document.getElementById(name);
         
         // If the player dropped hasn't completed their round yet, give the other player the win
-        if (!HTMLplayerDropped.parentElement.classList.contains("active")) {
+        if (!HTMLplayerDropped.parentElement.parentElement.classList.contains("active")) {
             let HTMLpairedPlayer = getPairedPlayerHTML(HTMLplayerDropped);
             console.log(HTMLpairedPlayer.name);
             HTMLpairedPlayer.wins++;
-            HTMLplayerDropped.parentElement.classList.add("active");
+            HTMLplayerDropped.parentElement.parentElement.classList.add("active");
+            matchesComplete++;
             this.forceUpdate();
         }
         
         players.splice(findPlayerIndex(name), 1);
         
-        toast(name + " has been dropped!");
+        toastr.success(name + " has been dropped!");
         
         // Destroys the modal
         var instance = M.Modal.getInstance(document.getElementById("drop-modal"));
@@ -464,9 +474,12 @@ class Pairings extends React.Component {
                 <h1 id="round-number">Round {round}</h1>
                 <p>Click on a player to assign the win, and click on vs to assign both players the tie.</p>
                 <GeneratePairings round={0} />
-                <button class="btn" onClick={() => this.nextRound()}><i class="material-icons left">forward</i>Next Round</button>
-                <button class="btn" onClick={() => this.endTournament()}><i class="material-icons left">done</i>End Tournament</button>
-                <a class="waves-effect waves-light btn modal-trigger" href="#drop-modal"><i class="material-icons left">remove_circle</i>Drop Player</a>
+
+                <button class="btn btn-primary" onClick={() => this.nextRound()}>Next Round</button>
+                    
+                <button class="btn btn-default" onClick={() => this.endTournament()}>End Tournament</button>
+                    
+                <a class="btn btn-warning modal-trigger" href="#drop-modal">Drop Player</a>
 
               <div id="drop-modal" class="modal">
                 <div class="modal-content">
@@ -489,20 +502,26 @@ class Pairings extends React.Component {
                 {this.renderTabBar()}
                 {renderUnclickablePlayers()}
                 <p>Click on each player to view their matchups</p>
-                <ul class="collapsible">
-                    {players.map((p, i) => <li> 
-                                     <div class="collapsible-header" id={p.name}>{addOne(i) + ". " + displayPlayer(p)}</div>
+                <div id="accordion">
+                    {players.map((p, i) => <div class="card"> 
+                                     <div class="card-header" id={p.name}>
+                                         <button class="btn btn-link" data-toggle="collapse" data-target={"#" + p.name + "-body"} aria-expanded="true" aria-controls={"#" + p.name + "-body"}>
+                                          {addOne(i) + ". " + displayPlayer(p)}
+                                        </button>
+                                    </div>
                                      
-                                     <div class="collapsible-body">
-                                         <ul>
-                                        {p.played.map((q, j) =>
-                                                       <li>Round {addOne(j)} {q.name} - {q.result}</li>
-                                                       )}
-                                        </ul>
-                                     </div> 
-                                 </li>)}
-                </ul>
-                <button class="btn" onClick={() => this.newTournament()}>New Tournament</button>
+                                     <div id={p.name + "-body"} class="collapse show" aria-labelledby={"#" + p.name} data-parent="#accordion">
+                                         <div class="card-body">
+                                             <ul>
+                                            {p.played.map((q, j) =>
+                                                           <li>Round {addOne(j)} {q.name} - {q.result}</li>
+                                                           )}
+                                            </ul>
+                                         </div> 
+                                     </div>
+                                 </div>)}
+                </div>
+                <button class="btn btn-primary" onClick={() => this.newTournament()}>New Tournament</button>
             </div>
         );
         }
@@ -525,9 +544,11 @@ let rounds = [];
 let round;
 let numRounds;
 
-// From https://bocoup.com/blog/find-the-closest-power-of-2-with-javascript
 function recommendedRounds() {
-    return Math.round(Math.log(players.length) / Math.log(2));
+    let n = players.length, off = 1;
+    if (n == 15) off = 2;
+    if (n && (n & (n - 1)) === 0) off = 0;
+    return Math.log(1 << 31 - Math.clz32(n)) / Math.log(2) + off;
 }
 
 let matchesErrorState;
@@ -570,6 +591,7 @@ let matchPoints = player => player.wins * 3 + player.ties;
 
 function displayPlayer(p) {
     if (p == "bye") return "BYE";
+    //console.log(resistanceDisplay(p));
     return (p.name + " (" + wins(p) + "-" + p.losses + "-" + p.ties + " (" + matchPoints(p) + ")) " + resistanceDisplay(p) + "%");
 } 
 
@@ -624,7 +646,7 @@ let resistance = (player) => {
 
 let resistanceWins = player => player.wins - player.byes;
 
-let resistanceDisplay = player => parseFloat(resistance(player)).toFixed(4) * 100;
+let resistanceDisplay = player => Number.parseFloat(resistance(player)).toFixed(4);
 
 function comparePlayers(thisPlayer, nextPlayer) {
     // We want the list in descending order
@@ -637,8 +659,6 @@ function comparePlayersIncludeResistance(thisPlayer, nextPlayer) {
     
     return comparePlayers(thisPlayer, nextPlayer);
 }
-
-function toast(text) { M.toast({html: text}) }
 
 function shuffle(a) {
     for (let i = a.length - 1; i > 0; i--) {
