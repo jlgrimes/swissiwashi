@@ -117,7 +117,7 @@ class Initialize extends React.Component {
                 
                 <button class="btn btn-default" onClick={() => this.loadPreset()}>Load Preset Players</button>
                 
-                <button class="btn btn-danger" onClick={() => {$("#initialize").addClass("animated hinge")}}>Destory this page</button>
+                <button class="btn btn-danger" onClick={() => {$("#initialize").addClass("animated hinge")}}>Destroy this page</button>
                 
                 <h5 id="player-count">{displayPlayerCount()}</h5>
                 
