@@ -6,6 +6,7 @@ class Initialize extends React.Component {
         this.handleRoundChange = this.handleRoundChange.bind(this);
         this.startTournament = this.startTournament.bind(this);
         this.loadPreset = this.loadPreset.bind(this);
+        this.loadTournament = this.loadTournament.bind(this);
         this.addPlayer = this.addPlayer.bind(this);
         this.deletePlayer = this.deletePlayer.bind(this);
         
@@ -14,6 +15,8 @@ class Initialize extends React.Component {
         
         numRounds = recommendedRounds();
         this.forceUpdate();
+        
+        tournamentName = "";
     }
     
     handleNameChange(event) {
@@ -81,8 +84,46 @@ class Initialize extends React.Component {
         this.forceUpdate();
     }
     
+    loadTournament() {
+        var fileInput = document.getElementById('tournament-input');
+        //var fileDisplayArea = document.getElementById('fileDisplayArea');
+
+        var file = fileInput.files[0];
+        var reader = new FileReader();
+
+        reader.onload = function (e) {
+            
+            let tournament = JSON.parse(reader.result);
+            $('#load-modal').modal('hide');
+            console.log(tournament.pairingsHistory);
+            ReactDOM.render(
+                <div class="container">
+                    <Standings name={tournament.name} date={tournament.date} players={tournament.players} pairingsHistory={tournament.pairings} rounds={tournament.rounds} />
+                </div>,
+                document.getElementById('root')
+                    
+            );
+        }
+
+        reader.readAsText(file);
+    }
+    
     startTournament() {
         shuffle(players);
+        
+        tournamentName = $("#tournament-name").val();
+        if (tournamentName == "")
+            tournamentName = "Tournament";
+        
+        let date = new Date();
+        let d = date.getDate();
+        let m = date.getMonth() + 1;
+        let y = date.getFullYear();
+        date = m + "/" + d + "/" + y;
+        //console.log(date);
+        
+        tournamentDate = date;
+        
         ReactDOM.render(
             <Pairings players={players} pairings={pairings}/>,
             document.getElementById('root')
@@ -92,16 +133,13 @@ class Initialize extends React.Component {
     render() {
         let players = this.state.players;
         return (
-            <div class="container animated fadeIn" id="initialize">
+            <div class="container" id="initialize">
                 <h1>POM</h1>
                 <h2>Packala Open Manager</h2>
                 
                 <div class="row">
-                    <div class="md-form input-group col s6">
-                        <input type="text" class="form-control" placeholder="Player name" id="player-input" onChange={this.handleNameChange} onKeyPress={(e) => this.handleKeyPress(e)} />
-                      <div class="input-group-append">
-                        <button class="btn btn-default waves-effect m-0" type="button" onClick={() => this.addPlayer()}>Enter</button>
-                      </div>
+                <div class="md-form input-group col s6">
+                        <input type="text" class="form-control" placeholder="Tournament name" id="tournament-name" />
                     </div>
                     
                     <div class="md-form input-group col s3">
@@ -111,11 +149,49 @@ class Initialize extends React.Component {
                             <span class="input-group-text" id="basic-addon2">Rounds</span>
                           </div>
                     </div>
+                    
+                    </div>
+                
+                <div class="row">
+                    
+                    <div class="md-form input-group col s6">
+                        <input type="text" class="form-control" placeholder="Player name" id="player-input" onChange={this.handleNameChange} onKeyPress={(e) => this.handleKeyPress(e)} />
+                      <div class="input-group-append">
+                        <button class="btn btn-secondary waves-effect m-0" type="button" onClick={() => this.addPlayer()}>Enter</button>
+                      </div>
+                    </div>
                 </div>
                 
                 <button onClick={() => this.startTournament()} class="btn btn-primary">Start Tournament</button>
                 
-                <button class="btn btn-default" onClick={() => this.loadPreset()}>Load Preset Players</button>
+                <button class="btn btn-secondary" onClick={() => this.loadPreset()}>Load Preset Players</button>
+                
+                <div class="btn btn-secondary" data-toggle="modal" data-target="#load-modal">Load Tournament</div>
+                
+                <div class="modal fade" id="load-modal" tabindex="-1" role="dialog" aria-labelledby="load-modal-label" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="load-modal-label">Load Tournament</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <p>Please upload a compatible json file.</p>
+                                
+                                <div class="md-form">
+                                    <input type="file" id="tournament-input" class="form-control" placeholder="Player name"></input>
+                                </div>
+                            </div>
+                            
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-primary" onClick={() => this.loadTournament()}>Load</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
                 
                 <button class="btn btn-danger" onClick={() => {$("#initialize").addClass("animated hinge")}}>Destroy this page</button>
                 
@@ -135,9 +211,14 @@ let displayPlayerCount = () => {
     return players.length + " players";
 }
 
-let newPairings = () => {
+function newPairings(ifRepair) {
+    //console.log("yo");
     matchesComplete = 0;
     players.sort(comparePlayers);
+    
+    if (round == 1)
+        shuffle(players);
+    
     pairings = [];
     
     // Accounting for the bye in the ORIGINAL players array
@@ -240,10 +321,12 @@ let newPairings = () => {
     if (byePlayer != "")
         pairings.push(byePlayer);
     
-    pairingsHistory.push(JSON.parse(JSON.stringify(pairings)));
     currentPairings = pairings;
     
-    rounds.push(round);
+    if (!ifRepair) {
+        pairingsHistory.push(JSON.parse(JSON.stringify(pairings)));
+        rounds.push(round);
+    }
     //this.forceUpdate();
 }
 
@@ -255,7 +338,7 @@ class GeneratePairings extends React.Component {
             this.handleTie = this.handleTie.bind(this);
 
             // If it's on the pairings page, generate new pairings. Else, recall the round we were on
-            newPairings();
+            newPairings(false);
             
             // Reinitializes the filter bar
             searchQuery = "";
@@ -343,7 +426,7 @@ class GeneratePairings extends React.Component {
                     <div class={"list-group-item pairing-item " + uh(p)}>
                                                                  <div class="row">
                         {this.displayPlayer(p.first)}
-                        <div class="col" onClick={(e) => this.handleTie(e)}> vs </div>
+                        <div class="col center-align" onClick={(e) => this.handleTie(e)}> vs </div>
                         {this.displayPlayer(p.second)}
                                                                  </div>
                     </div>
@@ -359,31 +442,20 @@ let uh = (p) => {
     return "";
 }
 
-let renderUnclickablePlayers = () => <div class="tab-content">{pairingsHistory.map((curr, currPos) =>
-                <div id={"round-" + addOne(currPos)} class="list-group tab-pane fade">{curr.map((p, i) => 
-                    <div class="list-group-item">
-                    <div class="row">
-                        {displayPlayer(p.first)}
-                        <div class="col s6 center-align"> vs </div>
-                        {displayPlayer(p.second)}
-                    </div>
-                   </div>
-                )}</div>)}</div>;
-
 class Pairings extends React.Component {
     constructor(props) {
         super(props);
         round = 1;
         
         this.nextRound = this.nextRound.bind(this);
+        this.repair = this.repair.bind(this);
         this.endTournament = this.endTournament.bind(this);
         this.renderRounds = this.renderRounds.bind(this);
         this.newTournament = this.newTournament.bind(this);
-        this.renderTabBar = this.renderTabBar.bind(this);
         this.dropPlayer = this.dropPlayer.bind(this);
         this.updateTabs = this.updateTabs.bind(this);
         this.searchBarUpdate = this.searchBarUpdate.bind(this);
-        this.shadeRoundResult = this.shadeRoundResult.bind(this);
+        this.exportTournament = this.exportTournament.bind(this);
     }
     
     componentDidMount() {
@@ -394,7 +466,6 @@ class Pairings extends React.Component {
     
     componentDidUpdate() {
          //M.AutoInit();
-        $('.collapse').collapse()
     }
     
     nextRound() {
@@ -413,8 +484,16 @@ class Pairings extends React.Component {
         }
         
         round++;
-        
-        newPairings();
+        newPairings(false);
+        this.forceUpdate();
+    }
+    
+    repair() {
+        if (matchesComplete > 0) {
+            toastr.error("You can't repair in the middle of a round");
+            return;
+        }
+        newPairings(true);
         //$("#bye").parent().parent().addClass("active");
         
         this.forceUpdate();
@@ -438,6 +517,7 @@ class Pairings extends React.Component {
         pairingsHistory = [];
         rounds = [];
         matchesErrorState = false;
+        
         ReactDOM.render(
             <Initialize />,
             document.getElementById('root')
@@ -449,18 +529,6 @@ class Pairings extends React.Component {
         //console.log("update");
         //var instance = M.Tabs.getInstance(document.getElementById("tabs"));
         //instance.updateTabIndicator();
-    }
-    
-    renderTabBar() {
-        return (
-                <ul class="nav nav-pills mb-3" role="tablist">
-                      {rounds.map(r => <li class="nav-item">
-                                            <a class="nav-link" data-toggle="tab" href={"#round-" + r} role="tab">
-                                                {renderTab(r)}
-                                            </a>
-                                        </li>)}
-                </ul>
-        );
     }
     
     dropPlayer() {
@@ -494,7 +562,8 @@ class Pairings extends React.Component {
     renderRounds() {
         if (round != "DONE" && round <= numRounds) {
             return(<div class="container">
-                <h1 id="round-number">Round {round}</h1>
+                <h1 id="tournament-name-display">{tournamentName}</h1>
+                <h2 id="round-number">Round {round}</h2>
                 <p>Click on a player to assign the win, and click on vs to assign both players the tie.</p>
                 
                 <div class="md-form">
@@ -505,6 +574,8 @@ class Pairings extends React.Component {
                 <GeneratePairings round={0} />
 
                 <button class="btn btn-primary" onClick={() => this.nextRound()}>Next Round</button>
+                
+                <button class="btn btn-secondary" data-toggle="modal" onClick={() => this.repair()}>Repair</button>
                     
                 <button class="btn btn-secondary" data-toggle="modal" data-target="#drop-modal">Drop Player</button>
                     
@@ -539,16 +610,117 @@ class Pairings extends React.Component {
         else {
             //currentPairings = pairingsHistory[0];
             return (
-            <div class="container animated fadeIn">
-                <h1>Final Standings</h1>
+            <div class="container">
+                    
+                <Standings name={tournamentName} date={tournamentDate} players={players} pairingsHistory={pairingsHistory} rounds={rounds} />
+                    
+                <button class="btn btn-primary" onClick={() => this.newTournament()}>New Tournament</button>
+                    
+                <button class="btn btn-secondary" onClick={() => this.exportTournament()}>Export Tournament</button>
+            </div>
+        );
+        }
+    }
+    
+    searchBarUpdate(event) {
+        searchQuery = event.target.value;
+        this.forceUpdate()
+        //console.log(searchQuery);
+        
+        //$(".pairing-item").addClass("animated bounce");
+        
+        //$(".pairing-item").each(() => {$(this).toggleClass("animated bounce")});
+    }
+    
+    exportTournament() {
+        let tournament = {
+            name: tournamentName,
+            date: tournamentDate,
+            rounds: rounds,
+            players: players,
+            pairings: pairingsHistory
+        };
+        
+        let filename = tournamentName.toLowerCase().split(' ').join('-') + '.json';
+        
+        var element = document.createElement('a');
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(JSON.stringify(tournament)));
+        element.setAttribute('download', filename);
+
+        element.style.display = 'none';
+        document.body.appendChild(element);
+
+        element.click();
+
+        document.body.removeChild(element);
+        
+        toastr.success(tournamentName + " exported!");
+    }
+    
+    render() {   
+        return (
+            this.renderRounds()
+        );
+    }
+}
+
+class Standings extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {name: props.name, date: props.date, players: props.players, pairingsHistory: props.pairingsHistory, rounds: props.rounds};
+        
+        this.renderTabBar = this.renderTabBar.bind(this);
+        this.shadeRoundResult = this.shadeRoundResult.bind(this);
+        this.renderUnclickablePlayers = this.renderUnclickablePlayers.bind(this);
+    }
+    
+    componentDidMount() {
+        $('.collapse').collapse()
+    }
+    
+    renderTabBar() {
+        return (
+                <ul class="nav nav-pills mb-3" role="tablist">
+                      {this.state.rounds.map(r => <li class="nav-item">
+                                            <a class="nav-link" data-toggle="tab" href={"#round-" + r} role="tab">
+                                                {renderTab(r)}
+                                            </a>
+                                        </li>)}
+                </ul>
+        );
+    }
+    
+    shadeRoundResult(result) {
+        if (result == "win") return "list-group-item-success";
+        if (result == "tie") return "list-group-item-warning";
+        if (result == "loss") return "list-group-item-danger";
+    }
+    
+    renderUnclickablePlayers() { return(<div class="tab-content">{this.state.pairingsHistory.map((curr, currPos) =>
+                <div id={"round-" + addOne(currPos)} class="list-group tab-pane fade">{curr.map((p, i) => 
+                    <div class="list-group-item">
+                    <div class="row">
+                        {displayPlayer(p.first)}
+                        <div class="col center-align"> vs </div>
+                        {displayPlayer(p.second)}
+                    </div>
+                   </div>
+                )}</div>)}</div>)};
+    
+    render() {
+        return (
+            <div>
+                <h1>{this.state.name} Final Standings</h1>
+                <h3>{this.state.date}</h3>
                 {this.renderTabBar()}
-                {renderUnclickablePlayers()}
+                {this.renderUnclickablePlayers()}
                 <p>Click on each player to view their matchups</p>
                 <div id="accordion">
-                    {players.map((p, i) => <div class="card"> 
+                    {this.state.players.map((p, i) => <div class="card"> 
                                      <div class="card-header" id={p.name}>
                                          <button class="btn btn-link" data-toggle="collapse" data-target={"#" + p.name + "-body"} aria-expanded="true" aria-controls={"#" + p.name + "-body"}>
-                                          {addOne(i) + ". " + displayPlayer(p)}
+                                          {addOne(i) + ". "}
+                                             <DisplayPlayer player={p} players={this.state.players} />
                                         </button>
                                     </div>
                                      
@@ -563,34 +735,85 @@ class Pairings extends React.Component {
                                      </div>
                                  </div>)}
                 </div>
-                <button class="btn btn-primary" onClick={() => this.newTournament()}>New Tournament</button>
             </div>
-        );
-        }
-    }
-    
-    shadeRoundResult(result) {
-        if (result == "win") return "list-group-item-success";
-        if (result == "tie") return "list-group-item-warning";
-        if (result == "loss") return "list-group-item-danger";
-    }
-    
-    searchBarUpdate(event) {
-        searchQuery = event.target.value;
-        this.forceUpdate()
-        //console.log(searchQuery);
-        
-        //$(".pairing-item").addClass("animated bounce");
-        
-        //$(".pairing-item").each(() => {$(this).toggleClass("animated bounce")});
-    }
-    
-    render() {   
-        return (
-            this.renderRounds()
         );
     }
 }
+
+class DisplayPlayer extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {player: props.player, players: props.players};
+        
+        this.winPercentage = this.winPercentage.bind(this);
+        this.resistance = this.resistance.bind(this);
+        this.findPlayer = this.findPlayer.bind(this);
+    }
+    
+    winPercentage() {
+        let player = this.state.player;
+        
+        return Math.max(0.25, (resistanceWins(player) + player.ties / 2) / (resistanceWins(player) + player.ties + player.losses));
+    }
+    
+    resistance() {
+        if (this.state.player == "bye") return;
+    
+        let resistanceTotal = 0;
+        for (let p in this.state.player.played)
+            resistanceTotal += this.winPercentage(findPlayer(this.state.player.played[p].name));
+
+        resistanceTotal /= this.state.player.played.length;
+        return Number.parseFloat(resistanceTotal * 100).toFixed(2);
+    }
+    
+    findPlayer(name) {
+        for (let p in this.state.players)
+            if (this.state.players[p].name == name)
+                return this.state.players[p];
+
+        return false;
+    };
+    
+    render() {
+        let p = this.state.player;
+        if (p == "bye") return "BYE";
+
+        return (
+            <div class="inline">
+                {p.name + " (" + wins(p) + "-" + p.losses + "-" + p.ties + " (" + matchPoints(p) + ")) " + this.resistance() + "%"}
+            </div>);
+    }
+}
+
+
+// idk if i need these
+function displayPlayer(p) {
+    if (p == "bye") return "BYE";
+    //console.log(resistanceDisplay(p));
+    return (p.name + " (" + wins(p) + "-" + p.losses + "-" + p.ties + " (" + matchPoints(p) + ")) " + resistanceDisplay(p) + "%");
+} 
+
+let wins = player => player.wins;
+
+let winPercentage = player => Math.max(0.25, (resistanceWins(player) + player.ties / 2) / (resistanceWins(player) + player.ties + player.losses));
+
+let resistance = (player) => {
+    if (player == "bye") return;
+    
+    let resistanceTotal = 0;
+    for (let p in player.played)
+        resistanceTotal += winPercentage(findPlayer(player.played[p].name));
+    
+    resistanceTotal /= player.played.length;
+    return resistanceTotal * 100;
+}
+
+let resistanceWins = player => player.wins - player.byes;
+
+let resistanceDisplay = player => Number.parseFloat(resistance(player)).toFixed(2);
+// end of potentially useless functions
+
 
 let addOne = (i) => i + 1;
 
@@ -602,6 +825,8 @@ let rounds = [];
 let round;
 let numRounds;
 let searchQuery;
+let tournamentName;
+let tournamentDate;
 
 function recommendedRounds() {
     let n = players.length, off = 1;
@@ -654,14 +879,6 @@ function completePairing(player) {
 
 let matchPoints = player => player.wins * 3 + player.ties;
 
-function displayPlayer(p) {
-    if (p == "bye") return "BYE";
-    //console.log(resistanceDisplay(p));
-    return (p.name + " (" + wins(p) + "-" + p.losses + "-" + p.ties + " (" + matchPoints(p) + ")) " + resistanceDisplay(p) + "%");
-} 
-
-let wins = player => player.wins;
-
 let findPlayer = (name) => {
     for (let p in players)
         if (players[p].name == name)
@@ -695,23 +912,6 @@ function getPairedPlayerHTML(firstPlayer) {
     
     return findPlayer(nextPlayer);
 }
-
-let winPercentage = player => Math.max(0.25, (resistanceWins(player) + player.ties / 2) / (resistanceWins(player) + player.ties + player.losses));
-
-let resistance = (player) => {
-    if (player == "bye") return;
-    
-    let resistanceTotal = 0;
-    for (let p in player.played)
-        resistanceTotal += winPercentage(findPlayer(player.played[p].name));
-    
-    resistanceTotal /= player.played.length;
-    return resistanceTotal * 100;
-}
-
-let resistanceWins = player => player.wins - player.byes;
-
-let resistanceDisplay = player => Number.parseFloat(resistance(player)).toFixed(2);
 
 function comparePlayers(thisPlayer, nextPlayer) {
     // We want the list in descending order

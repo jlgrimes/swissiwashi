@@ -60,6 +60,19 @@ let resistance = player => {
 }
 ```
 
+## Exporting Tournaments
+
+Tournaments are exported as json files with the following format:
+
+```javascript
+let tournament = {
+    name: "My Tournament",
+    rounds: 5,
+    players: playerStandings,
+    pairings: pairingsHistory
+};
+```
+
 ### Known Issues
 
 * Sometimes round pairings don't want to go all the way through
