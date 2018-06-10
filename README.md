@@ -2,36 +2,61 @@ POM (Packala Open Manager) is a lightweight TOM clone written in React for peopl
 
 Everything I'm going to say in the calculations section is essentially a carbon copy of [Chris Schemanske's awesome article on how this stuff works](https://sixprizes.com/tiebreakers/), I just put it into code.
 
-## Data Structures
+# Data Structures
+
+## Players
 
 Each player is stored as follows:
 
 ```javascript
 player = {
-    name: 'Jared',
+    name: "Jared",
     wins: 4,
     ties: 0,
     losses: 0,
     played: ["Russell LaParre", "Rahul Reddy", "Chris Schemanske", "Kenward"],
-    byes: 0
+    byes: 0,
+    resistance: 66.67,
+    oppResistance: 53.45
 }
 ```
 
-Players in the "played" array are indeed stored as strings instead of objects, and dereferenced when I need the actual player. That's because JSON can't stringify circular objects... nor do I want to deal with them.
+Players in the "played" array are indeed stored as custom objects instead of player objects, and dereferenced when I need the actual player. That's because JSON can't stringify circular objects... nor do I want to deal with them. The "played" data structure resembles the following:
 
-For pairings, the array is sorted by match points first (calculated below), then resistance (also calculated balow).
+``` javascript
+played = {
+    name : "Chris Schemanske",
+    result: "win" // 'win', 'loss', or 'tie'
+}
+```
 
-## Rounds
+## Pairings
+
+For pairings, the array is sorted by match points first (calculated below), then resistance (also calculated below). The "pairings" data structure resembles the follows:
+
+``` javascript
+pairings = {
+    
+}
+```
+
+# Rounds
 
 Recommended rounds numbers are taken from powers of two (9-16 players: 4 rounds, 17-32 players: 5 rounds, etc).
 
-## Calculations
+# Calculations
+
+## Match Points
 
 Match points are calculated as you'd expect:
 
 ```javascript
 let matchPoints = player => player.wins * 3 + player.ties;
 ```
+
+## Tie Breakers
+
+### Resistance
 
 The resistance calculation (formula pulled from [this thread](http://pokegym.net/community/index.php?threads/tournament-resistance-calculation.29506/)) is the average of all played opponents' win percentages. Each win percentage is calculated by averaging the wins, losses, and ties over the number of matches played (ties count as half of a win). This is done as follows:
 
@@ -44,23 +69,52 @@ As you can see, players' win percentages can't be lower than 25% in order to min
 From this method, we can define a particular player's resistance as follows:
 
 ```javascript
-let resistance = player => {
-    // Resistance sum starts off as zero
+let resistance = (player) => {
+    // We don't care about byes
+    if (player == "bye") return;
+                        
+     // The resistance is the average of all of the players a player played by's win percentages
     let resistanceTotal = 0;
-                              
-    // Add the win percentages of each player
     for (let p in player.played)
-        resistanceTotal += winPercentage(findPlayer(player.played[p]));
-    
-    // Divide by total number of players. This gets the average win percentage
-    resistanceTotal /= player.played.length;
-                            
-    // This outputs a raw decimal. For display, multiply it by 100 and fix it at 2 decimal places.
-    return resistanceTotal;
+        resistanceTotal += winPercentage(p);
+
+    return resistanceTotal / player.played.length;
 }
 ```
 
-## Exporting Tournaments
+Opponent's resistance (opponent's opponent's win %) is calculated the exact same way, except the winPercentage is replaced by a call to the resistance function defined above.
+
+#### Dynamic Programming
+
+Of course, the resistance function above isn't **actually** the resistance function in the code. The main difference is the use of dynamic programming, which involves storing values you calculate earlier in the program so you don't have to calculate them later. In this case, we store the resistance of a player (and opponent's resistance, because why not), and whenever we call the resistance function, there's a check to see if we already have a value in there. If there's actualyl something stored, we just return that instead of recaulculating it. This saves a ton of time, especially when calculating opponent's opponent's win percentages, which can use each player's resistance tens or hundreds of times.
+
+Also, not really dynamic programming related, but we have an optional "ps" (players) parameter just in case we're loading a tournament, and we don't want to call from the global players variable.
+
+This is how our modified dynamic resistance function looks:
+
+``` javascript
+let resistance = (player, ps, ifDynamic) => {
+    // If the value's already in there, return it
+    if (ifDynamic && !isNaN(player.resistance)) return player.resistance;
+                                             
+    // We globalize ps. If ps wasn't sent as a parameter, we're just going to use the global players
+    if (ps === undefined) ps = players;
+                                             
+    
+    if (player == "bye") return;
+    
+    // The resistance is the average of all of the players a player played by's win percentages
+    let resistanceTotal = 0;
+    for (let p in player.played)
+        resistanceTotal += winPercentage(p);
+    
+    // At the end, we store the calculated result in memory
+    player.resistance = resistanceTotal / player.played.length;
+    return player.resistance;
+}
+```
+
+# Exporting Tournaments
 
 Tournaments are exported as json files with the following format:
 
@@ -73,17 +127,17 @@ let tournament = {
 };
 ```
 
-### Known Issues
+## Known Issues
 
 * Sometimes round pairings don't want to go all the way through
 * vs formatted weird
 * Can't drop preset players?
+* Standings past opponent's win percentage (eg opponent's opponent's win percentage) is not calculated.
 
-### Features in Progress
+## Features in Progress
 
 Along with comments listed above.
 
 * Formatting pairings UI for individual rows. Table # doesn't want to work
-* Suggested round number
 * Better round progression UI
 * Just better UI

@@ -10,6 +10,8 @@ class Initialize extends React.Component {
         this.addPlayer = this.addPlayer.bind(this);
         this.deletePlayer = this.deletePlayer.bind(this);
         
+        console.log(document.cookie);
+        
         matchesErrorState = false;
         $("#number-rounds").val(0);
         
@@ -50,7 +52,9 @@ class Initialize extends React.Component {
             ties: 0,
             losses: 0,
             played: [],
-            byes: 0
+            byes: 0,
+            resistance: undefined,
+            oppResistance: undefined
         });
         this.setState({
             players
@@ -113,13 +117,13 @@ class Initialize extends React.Component {
         
         tournamentName = $("#tournament-name").val();
         if (tournamentName == "")
-            tournamentName = "Tournament";
+            tournamentName = "My Tournament";
         
         let date = new Date();
         let d = date.getDate();
         let m = date.getMonth() + 1;
         let y = date.getFullYear();
-        date = m + "/" + d + "/" + y;
+        date = m + "-" + d + "-" + y;
         //console.log(date);
         
         tournamentDate = date;
@@ -456,6 +460,7 @@ class Pairings extends React.Component {
         this.updateTabs = this.updateTabs.bind(this);
         this.searchBarUpdate = this.searchBarUpdate.bind(this);
         this.exportTournament = this.exportTournament.bind(this);
+        this.saveTournamentToCookies = this.saveTournamentToCookies.bind(this);
     }
     
     componentDidMount() {
@@ -657,6 +662,21 @@ class Pairings extends React.Component {
         toastr.success(tournamentName + " exported!");
     }
     
+    saveTournamentToCookies() {
+        let tournament = {
+            name: tournamentName,
+            date: tournamentDate,
+            rounds: rounds,
+            players: players,
+            pairings: pairingsHistory
+        };
+        
+        let date = new Date();
+        let cookie_name = tournamentName + " " + tournamentDate + " " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
+        bake_cookie(cookie_name, tournament);
+        toastr.success("Cookie " + cookie_name + " saved!");
+    }
+    
     render() {   
         return (
             this.renderRounds()
@@ -744,36 +764,7 @@ class DisplayPlayer extends React.Component {
     constructor(props) {
         super(props);
         this.state = {player: props.player, players: props.players};
-        
-        this.winPercentage = this.winPercentage.bind(this);
-        this.resistance = this.resistance.bind(this);
-        this.findPlayer = this.findPlayer.bind(this);
     }
-    
-    winPercentage() {
-        let player = this.state.player;
-        
-        return Math.max(0.25, (resistanceWins(player) + player.ties / 2) / (resistanceWins(player) + player.ties + player.losses));
-    }
-    
-    resistance() {
-        if (this.state.player == "bye") return;
-    
-        let resistanceTotal = 0;
-        for (let p in this.state.player.played)
-            resistanceTotal += this.winPercentage(findPlayer(this.state.player.played[p].name));
-
-        resistanceTotal /= this.state.player.played.length;
-        return Number.parseFloat(resistanceTotal * 100).toFixed(2);
-    }
-    
-    findPlayer(name) {
-        for (let p in this.state.players)
-            if (this.state.players[p].name == name)
-                return this.state.players[p];
-
-        return false;
-    };
     
     render() {
         let p = this.state.player;
@@ -781,10 +772,20 @@ class DisplayPlayer extends React.Component {
 
         return (
             <div class="inline">
-                {p.name + " (" + wins(p) + "-" + p.losses + "-" + p.ties + " (" + matchPoints(p) + ")) " + this.resistance() + "%"}
+                {p.name + " (" + wins(p) + "-" + p.losses + "-" + p.ties + " (" + matchPoints(p) + ")) Op Win: " + resistance(this.state.player, this.state.players, true) + "% Op/Op Win: " + oppResistance(this.state.player, this.state.players) + "%"}
             </div>);
     }
 }
+
+function findPlayer (name, ps) {
+    if (ps === undefined) ps = players;
+    
+    for (let p in ps)
+        if (ps[p].name == name)
+            return ps[p];
+    
+    return false;
+};
 
 
 // idk if i need these
@@ -798,15 +799,39 @@ let wins = player => player.wins;
 
 let winPercentage = player => Math.max(0.25, (resistanceWins(player) + player.ties / 2) / (resistanceWins(player) + player.ties + player.losses));
 
-let resistance = (player) => {
+let resistance = (player, ps, ifDynamic, ifFloat) => {
+    if (ifDynamic && !isNaN(player.resistance)) return player.resistance;
+    if (ps === undefined) ps = players;
     if (player == "bye") return;
     
     let resistanceTotal = 0;
     for (let p in player.played)
-        resistanceTotal += winPercentage(findPlayer(player.played[p].name));
+        resistanceTotal += winPercentage(findPlayer(player.played[p].name, ps));
     
-    resistanceTotal /= player.played.length;
-    return resistanceTotal * 100;
+    player.resistance = Number.parseFloat(resistanceTotal / player.played.length * 100).toFixed(2);
+    return player.resistance;
+}
+
+// Opponent's Opponent's Win Percentage
+function oppResistance (player, ps) {
+    // No ifDynamic parameter because this is always executed at the Final Standings page
+    if (!isNaN(player.oppResistance)) return player.oppResistance;
+    if (ps === undefined) ps = players;
+
+    let oppResistanceTotal = 0;
+    for (let p in player.played) {
+        oppResistanceTotal += Number.parseFloat(resistance(findPlayer(player.played[p].name, ps), ps, true));
+    }
+    
+    player.oppResistance = Number.parseFloat(oppResistanceTotal / player.played.length).toFixed(2);
+    
+    console.log(oppResistanceTotal);
+    console.log(player.played.length);
+    console.log("calcs");
+    console.log(oppResistanceTotal / player.played.length);
+    console.log(Number.parseFloat(oppResistanceTotal / player.played.length).toFixed(2));
+    console.log(player.oppResistance);
+    return player.oppResistance;
 }
 
 let resistanceWins = player => player.wins - player.byes;
@@ -829,10 +854,23 @@ let tournamentName;
 let tournamentDate;
 
 function recommendedRounds() {
-    let n = players.length, off = 1;
-    if (n == 15) off = 2;
-    if (n && (n & (n - 1)) === 0) off = 0;
-    return Math.log(1 << 31 - Math.clz32(n)) / Math.log(2) + off;
+    let n = players.length;
+    if (n <= 7) return 2;
+    if (n == 8) return 3;
+    if (n <= 12) return 4;
+    if (n <= 20) return 5;
+    if (n <= 32) return 5;
+    if (n <= 64) return 6;
+    if (n <= 128) return 7;
+    if (n <= 226) return 8;
+    if (n <= 409) return 9;
+    return 10;
+    
+    
+    //let n = players.length, off = 1;
+    //if (n == 15) off = 2;
+    //if (n && (n & (n - 1)) === 0) off = 0;
+    //return Math.log(1 << 31 - Math.clz32(n)) / Math.log(2) + off;
 }
 
 let matchesErrorState;
@@ -879,14 +917,6 @@ function completePairing(player) {
 
 let matchPoints = player => player.wins * 3 + player.ties;
 
-let findPlayer = (name) => {
-    for (let p in players)
-        if (players[p].name == name)
-            return players[p];
-    
-    return false;
-};
-
 let findPlayerIndex = (name) => {
     for (let p in players)
         if (players[p].name == name)
@@ -913,14 +943,38 @@ function getPairedPlayerHTML(firstPlayer) {
     return findPlayer(nextPlayer);
 }
 
+// This is for normal matches
 function comparePlayers(thisPlayer, nextPlayer) {
     // We want the list in descending order
     return matchPoints(nextPlayer) - matchPoints(thisPlayer);
 }
 
+// This is for final standings
 function comparePlayersIncludeResistance(thisPlayer, nextPlayer) {
-    if (matchPoints(thisPlayer) == matchPoints(nextPlayer))
-        return  resistance(nextPlayer) - resistance(thisPlayer);
+    // 1. Opponent's Win Percentage
+    if (matchPoints(thisPlayer) == matchPoints(nextPlayer)) {
+        if (resistance(nextPlayer) != resistance(thisPlayer))
+            return resistance(nextPlayer) - resistance(thisPlayer);
+        
+        // 2. Opponent's Opponent's Win Percentage
+        if (oppResistance(thisPlayer) != oppResistance(nextPlayer))
+            return oppResistance(thisPlayer) - oppResistance(nextPlayer);
+        
+        // 3. Head-to-head
+        let pIndex = findPlayedIndex(thisPlayer, nextPlayer.name);
+        if (pIndex) {
+            // If p1 beat p2, p1 is ranked higher than p2, which means we want it to stay first
+            if (thisPlayer.played[pIndex].result == "win")
+                return 1;
+            
+            // Id p1 lost to p2, p1 is ranked lower than p2, so we need to swap it with p2
+            if (thisPlayer.played[pIndex].result == "loss")
+                return -1;
+        }
+        
+        // 4. Standing of Last Opponent
+        return comparePlayersIncludeResistance(thisPlayer.played[thisPlayer.played.length - 1], nextPlayer.played[nextPlayer.played.length - 1]);
+    }
     
     return comparePlayers(thisPlayer, nextPlayer);
 }
@@ -931,6 +985,27 @@ function shuffle(a) {
         [a[i], a[j]] = [a[j], a[i]];
     }
     return a;
+}
+
+function bake_cookie(name, value) {
+  let cookie = name + "=" + JSON.stringify(value);
+  //var cookie = [name, '=', JSON.stringify(value), '; domain=.', window.location.host.toString(), '; path=/;'].join('');
+  document.cookie = cookie;
+}
+
+function read_cookie(name) {
+ var result = document.cookie.match(new RegExp(name + '=([^;]+)'));
+ result && (result = JSON.parse(result[1]));
+ return result;
+}
+
+function list_cookies() {
+    var theCookies = document.cookie.split(';');
+    var aString = '';
+    for (var i = 1 ; i <= theCookies.length; i++) {
+        aString += i + ' ' + theCookies[i-1] + "\n";
+    }
+    return aString;
 }
 
 ReactDOM.render(
