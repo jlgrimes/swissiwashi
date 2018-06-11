@@ -377,6 +377,7 @@ class GeneratePairings extends React.Component {
             this.displayPlayer = this.displayPlayer.bind(this);
             this.handleWin = this.handleWin.bind(this);
             this.handleTie = this.handleTie.bind(this);
+            this.handleUncomplete = this.handleUncomplete.bind(this);
 
             // If it's on the pairings page, generate new pairings. Else, recall the round we were on
             newPairings(false);
@@ -401,8 +402,9 @@ class GeneratePairings extends React.Component {
     
         handleWin(e) {
             // Make sure we don't already have a result
-            if (e.target.parentElement.parentElement.classList.contains('active'))
+            if (e.target.parentElement.parentElement.classList.contains('active')) {
                 return;
+            }
             
             // Say we have a result
             //e.target.parentElement.parentElement.classList.add('active');
@@ -459,12 +461,26 @@ class GeneratePairings extends React.Component {
             
             //currentPairings = pairingsHistory[pairingHistory.length - 1];
     }
+    
+    handleUncomplete(e) {
+        //console.log(e.target.parentElement.parentElement);
+        if (!e.target.parentElement.parentElement.classList.contains('active'))
+            return;
+        
+        let firstPlayer = e.target.parentElement.firstChild;
+        
+        // If they click vs, we can't uncomplete a pairing with vs as the player, so we just grab the first child
+        uncompletePairing(firstPlayer.id);
+        //console.log(firstPlayer);
+        
+        this.forceUpdate();
+    }
 
         render() {
             return (
                 <div>
                 <div class="list-group">{currentPairings.filter(p => p.first.name.indexOf(searchQuery) >= 0 || (p.second != "bye" && p.second.name.indexOf(searchQuery) >= 0)).map((p, i) => 
-                    <div class={"list-group-item pairing-item " + uh(p)}>
+                    <div class={"list-group-item pairing-item " + uh(p)} onClick={e => this.handleUncomplete(e)}>
                                                                  <div class="row">
                         {this.displayPlayer(p.first)}
                         <div class="col center-align" onClick={(e) => this.handleTie(e)}> vs </div>
@@ -489,11 +505,9 @@ class Pairings extends React.Component {
         round = 1;
         
         this.nextRound = this.nextRound.bind(this);
-        this.redoRound = this.redoRound.bind(this);
         this.repair = this.repair.bind(this);
         this.endTournament = this.endTournament.bind(this);
         this.renderRounds = this.renderRounds.bind(this);
-        this.newTournament = this.newTournament.bind(this);
         this.dropPlayer = this.dropPlayer.bind(this);
         this.updateTabs = this.updateTabs.bind(this);
         this.searchBarUpdate = this.searchBarUpdate.bind(this);
@@ -531,14 +545,6 @@ class Pairings extends React.Component {
         this.forceUpdate();
     }
     
-    redoRound() {
-        //$(".active").removeClass("active");
-        newPairings(true);
-        pairings = pairingsHistory[pairingsHistory.length - 1];
-        //currentPairings = pairings;
-        this.forceUpdate();
-    }
-    
     repair() {
         if (matchesComplete > 0) {
             toastr.error("You can't repair in the middle of a round");
@@ -565,18 +571,6 @@ class Pairings extends React.Component {
             document.getElementById('root')
         );
         */
-    }
-    
-    newTournament() {
-        players = [];
-        pairingsHistory = [];
-        rounds = [];
-        matchesErrorState = false;
-        
-        ReactDOM.render(
-            <Initialize />,
-            document.getElementById('root')
-        );
     }
 
     updateTabs(r) {
@@ -619,7 +613,7 @@ class Pairings extends React.Component {
             return(<div class="container">
                 <h1 id="tournament-name-display">{tournamentName}</h1>
                 <h2 id="round-number">Round {round}</h2>
-                <p>Click on a player to assign the win, and click on vs to assign both players the tie.</p>
+                <p>Click on a player to assign the win, click on vs to assign both players the tie, and click on an already completed match to undo.</p>
                 
                 <div class="md-form">
                     <i class="fa fa-search prefix"></i>
@@ -629,8 +623,6 @@ class Pairings extends React.Component {
                 <GeneratePairings round={0} />
 
                 <button class="btn btn-primary" onClick={() => this.nextRound()}>Next Round</button>
-                
-                <button class="btn btn-secondary" data-toggle="modal" onClick={() => this.redoRound()}>Redo Round</button>
                 
                 <button class="btn btn-secondary" data-toggle="modal" onClick={() => this.repair()}>Repair</button>
                     
@@ -670,8 +662,6 @@ class Pairings extends React.Component {
             <div class="container">
                     
                 <Standings name={tournamentName} date={tournamentDate} players={players} pairingsHistory={pairingsHistory} rounds={rounds} />
-                    
-                <button class="btn btn-primary" onClick={() => this.newTournament()}>New Tournament</button>
                     
                 <div class="btn-group">
                     <button class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Save Tournament</button>
@@ -754,6 +744,7 @@ class Standings extends React.Component {
         this.renderTabBar = this.renderTabBar.bind(this);
         this.shadeRoundResult = this.shadeRoundResult.bind(this);
         this.renderUnclickablePlayers = this.renderUnclickablePlayers.bind(this);
+        this.newTournament = this.newTournament.bind(this);
     }
     
     componentDidMount() {
@@ -789,6 +780,18 @@ class Standings extends React.Component {
                    </div>
                 )}</div>)}</div>)};
     
+    newTournament() {
+        players = [];
+        pairingsHistory = [];
+        rounds = [];
+        matchesErrorState = false;
+        
+        ReactDOM.render(
+            <Initialize />,
+            document.getElementById('root')
+        );
+    }
+    
     render() {
         return (
             <div>
@@ -817,6 +820,8 @@ class Standings extends React.Component {
                                      </div>
                                  </div>)}
                 </div>
+                
+                <button class="btn btn-primary" onClick={() => this.newTournament()}>New Tournament</button>
             </div>
         );
     }
@@ -976,6 +981,39 @@ function completePairing(player) {
                 if (pairings[p].first.name == player || pairings[p].second.name == player)
                     pairings[p].complete = true;
         }
+
+function uncompletePairing(player) {
+    for (let p in pairings) {
+        if (pairings[p].first.name == player) { // it's GOING to be first player's name, because that's what we're passing into the function
+            pairings[p].complete = false;
+            
+            console.log(pairings[p].first);
+            
+            let result = pairings[p].first.played[pairings[p].first.played.length - 1].result;
+            if (result == "win") {
+                pairings[p].first.wins--;
+                pairings[p].second.losses--;
+            }
+            
+            if (result == "tie") {
+                pairings[p].first.ties--;
+                pairings[p].second.ties--;
+            }
+            
+            if (result == "loss") {
+                pairings[p].first.losses--;
+                pairings[p].second.wins--;
+            }
+            
+            pairings[p].first.played.pop();
+            pairings[p].second.played.pop();
+            
+            matchesComplete--;
+            
+            break;
+        }
+    }
+}
 
 let matchPoints = player => player.wins * 3 + player.ties;
 
