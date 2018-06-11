@@ -82,8 +82,6 @@ let resistance = (player) => {
 }
 ```
 
-Opponent's resistance (opponent's opponent's win %) is calculated the exact same way, except the winPercentage is replaced by a call to the resistance function defined above.
-
 #### Dynamic Programming
 
 Of course, the resistance function above isn't **actually** the resistance function in the code. The main difference is the use of dynamic programming, which involves storing values you calculate earlier in the program so you don't have to calculate them later. In this case, we store the resistance of a player (and opponent's resistance, because why not), and whenever we call the resistance function, there's a check to see if we already have a value in there. If there's actualyl something stored, we just return that instead of recaulculating it. This saves a ton of time, especially when calculating opponent's opponent's win percentages, which can use each player's resistance tens or hundreds of times.
@@ -113,6 +111,16 @@ let resistance = (player, ps, ifDynamic) => {
     return player.resistance;
 }
 ```
+
+### Opponent's Opponent's Win Percentage
+
+Opponent's opponent's win percentage is calculated the exact same way, except the winPercentage is replaced by a call to the resistance function defined above. As mentioned earlier, we use dynamic programming to avoid redundant function calls. 
+
+If the players have tied op/op win %, we have to go deeper. This and resistance are calculated no matter what to display on the screen, whereas both below methods are strictly used for breaking ties.
+
+### Head-to-Head
+
+Basically, if the two players played each other, the winner gets placed higher. this doesn't happen very often, so we usually have to resort to standing of the last opponent.
 
 # Exporting Tournaments
 

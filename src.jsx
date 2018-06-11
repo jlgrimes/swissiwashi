@@ -6,17 +6,19 @@ class Initialize extends React.Component {
         this.handleRoundChange = this.handleRoundChange.bind(this);
         this.startTournament = this.startTournament.bind(this);
         this.loadPreset = this.loadPreset.bind(this);
-        this.loadTournament = this.loadTournament.bind(this);
+        this.loadUploadedTournament = this.loadUploadedTournament.bind(this); this.loadLocalTournament = this.loadLocalTournament.bind(this);
         this.addPlayer = this.addPlayer.bind(this);
         this.deletePlayer = this.deletePlayer.bind(this);
-        
-        console.log(document.cookie);
+        this.displayLocalStorage = this.displayLocalStorage.bind(this);
+        this.deleteLocalStorage = this.deleteLocalStorage.bind(this);
         
         matchesErrorState = false;
         $("#number-rounds").val(0);
         
         numRounds = recommendedRounds();
         this.forceUpdate();
+        
+        console.log(localStorage);
         
         tournamentName = "";
     }
@@ -88,28 +90,24 @@ class Initialize extends React.Component {
         this.forceUpdate();
     }
     
-    loadTournament() {
-        var fileInput = document.getElementById('tournament-input');
+    loadUploadedTournament() {
+                var fileInput = document.getElementById('tournament-input');
         //var fileDisplayArea = document.getElementById('fileDisplayArea');
 
         var file = fileInput.files[0];
         var reader = new FileReader();
 
         reader.onload = function (e) {
-            
             let tournament = JSON.parse(reader.result);
-            $('#load-modal').modal('hide');
-            console.log(tournament.pairingsHistory);
-            ReactDOM.render(
-                <div class="container">
-                    <Standings name={tournament.name} date={tournament.date} players={tournament.players} pairingsHistory={tournament.pairings} rounds={tournament.rounds} />
-                </div>,
-                document.getElementById('root')
-                    
-            );
+            loadTournament(tournament);
         }
-
         reader.readAsText(file);
+    }
+    
+    loadLocalTournament(e) {
+        let name = e.target.innerHTML.split(" <i")[0];
+        //console.log(name);
+        loadTournament(JSON.parse(localStorage.getItem(name)));
     }
     
     startTournament() {
@@ -132,6 +130,32 @@ class Initialize extends React.Component {
             <Pairings players={players} pairings={pairings}/>,
             document.getElementById('root')
         );
+    }
+    
+    displayLocalStorage() {
+        let names = [];
+        
+        for (let key in localStorage) {
+            if (key == "length")
+                break;
+            names.push(key);
+        }
+
+        return (
+            <div class="list-group">
+                {names.map( p => 
+                           <a class="list-group-item" onClick={e => this.loadLocalTournament(e)}>{p} <i onClick={e => this.deleteLocalStorage(e)} class="fa fa-trash"></i></a>
+                )}
+            </div>
+        );
+    }
+    
+    deleteLocalStorage(e) {
+        let name = e.target.parentElement.innerHTML.split(" <i")[0];
+        localStorage.removeItem(name);
+        toastr.success(name + " removed from local storage!");
+        //localStorage.removeItem(e.target.parent)
+        this.forceUpdate();
     }
     
     render() {
@@ -161,7 +185,7 @@ class Initialize extends React.Component {
                     <div class="md-form input-group col s6">
                         <input type="text" class="form-control" placeholder="Player name" id="player-input" onChange={this.handleNameChange} onKeyPress={(e) => this.handleKeyPress(e)} />
                       <div class="input-group-append">
-                        <button class="btn btn-secondary waves-effect m-0" type="button" onClick={() => this.addPlayer()}>Enter</button>
+                        <button class="btn btn-primary waves-effect m-0" type="button" onClick={() => this.addPlayer()}>Enter</button>
                       </div>
                     </div>
                 </div>
@@ -182,7 +206,9 @@ class Initialize extends React.Component {
                                 </button>
                             </div>
                             <div class="modal-body">
-                                <p>Please upload a compatible json file.</p>
+                                <p>Please choose a locally saved tournament, or upload a compatible json file.</p>
+                                
+                                {this.displayLocalStorage()}
                                 
                                 <div class="md-form">
                                     <input type="file" id="tournament-input" class="form-control" placeholder="Player name"></input>
@@ -190,7 +216,7 @@ class Initialize extends React.Component {
                             </div>
                             
                             <div class="modal-footer">
-                                <button type="button" class="btn btn-primary" onClick={() => this.loadTournament()}>Load</button>
+                                <button type="button" class="btn btn-primary" onClick={() => this.loadUploadedTournament()}>Load</button>
                             </div>
                         </div>
                     </div>
@@ -209,6 +235,17 @@ class Initialize extends React.Component {
         );
     }
 }
+
+function loadTournament(tournament) {
+        $('#load-modal').modal('hide');
+        console.log(tournament.pairingsHistory);
+        ReactDOM.render(
+            <div class="container">
+                <Standings name={tournament.name} date={tournament.date} players={tournament.players} pairingsHistory={tournament.pairings} rounds={tournament.rounds} />
+            </div>,
+            document.getElementById('root')        
+            );
+    }
 
 let displayPlayerCount = () => {
     if (players.length == 1) return "1 player";
@@ -452,6 +489,7 @@ class Pairings extends React.Component {
         round = 1;
         
         this.nextRound = this.nextRound.bind(this);
+        this.redoRound = this.redoRound.bind(this);
         this.repair = this.repair.bind(this);
         this.endTournament = this.endTournament.bind(this);
         this.renderRounds = this.renderRounds.bind(this);
@@ -460,7 +498,7 @@ class Pairings extends React.Component {
         this.updateTabs = this.updateTabs.bind(this);
         this.searchBarUpdate = this.searchBarUpdate.bind(this);
         this.exportTournament = this.exportTournament.bind(this);
-        this.saveTournamentToCookies = this.saveTournamentToCookies.bind(this);
+        this.saveTournamentLocalStorage = this.saveTournamentLocalStorage.bind(this);
     }
     
     componentDidMount() {
@@ -493,6 +531,14 @@ class Pairings extends React.Component {
         this.forceUpdate();
     }
     
+    redoRound() {
+        //$(".active").removeClass("active");
+        newPairings(true);
+        pairings = pairingsHistory[pairingsHistory.length - 1];
+        //currentPairings = pairings;
+        this.forceUpdate();
+    }
+    
     repair() {
         if (matchesComplete > 0) {
             toastr.error("You can't repair in the middle of a round");
@@ -505,6 +551,10 @@ class Pairings extends React.Component {
     }
     
     endTournament() {
+        if (matchesComplete < pairings.length) {
+            toastr.error("You can't end a tournament in the middle of a round!");
+            return;
+        }
         players.sort(comparePlayersIncludeResistance);
         currentPairings = pairingsHistory[0];
         round = "DONE";
@@ -580,6 +630,8 @@ class Pairings extends React.Component {
 
                 <button class="btn btn-primary" onClick={() => this.nextRound()}>Next Round</button>
                 
+                <button class="btn btn-secondary" data-toggle="modal" onClick={() => this.redoRound()}>Redo Round</button>
+                
                 <button class="btn btn-secondary" data-toggle="modal" onClick={() => this.repair()}>Repair</button>
                     
                 <button class="btn btn-secondary" data-toggle="modal" data-target="#drop-modal">Drop Player</button>
@@ -621,7 +673,14 @@ class Pairings extends React.Component {
                     
                 <button class="btn btn-primary" onClick={() => this.newTournament()}>New Tournament</button>
                     
-                <button class="btn btn-secondary" onClick={() => this.exportTournament()}>Export Tournament</button>
+                <div class="btn-group">
+                    <button class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Save Tournament</button>
+                    
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" onClick={() => this.saveTournamentLocalStorage()}>Local Storage</a>
+                        <a class="dropdown-item" onClick={() => this.exportTournament()}>Download</a>
+                    </div>
+                </div>
             </div>
         );
         }
@@ -662,7 +721,7 @@ class Pairings extends React.Component {
         toastr.success(tournamentName + " exported!");
     }
     
-    saveTournamentToCookies() {
+    saveTournamentLocalStorage() {
         let tournament = {
             name: tournamentName,
             date: tournamentDate,
@@ -672,9 +731,12 @@ class Pairings extends React.Component {
         };
         
         let date = new Date();
-        let cookie_name = tournamentName + " " + tournamentDate + " " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
-        bake_cookie(cookie_name, tournament);
-        toastr.success("Cookie " + cookie_name + " saved!");
+        let tournament_name = tournamentName + " " + tournamentDate + " " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
+        
+        // Set to local storage
+        localStorage.setItem(tournament_name, JSON.stringify(tournament));
+        
+        toastr.success(tournament_name + " saved!");
     }
     
     render() {   
@@ -985,27 +1047,6 @@ function shuffle(a) {
         [a[i], a[j]] = [a[j], a[i]];
     }
     return a;
-}
-
-function bake_cookie(name, value) {
-  let cookie = name + "=" + JSON.stringify(value);
-  //var cookie = [name, '=', JSON.stringify(value), '; domain=.', window.location.host.toString(), '; path=/;'].join('');
-  document.cookie = cookie;
-}
-
-function read_cookie(name) {
- var result = document.cookie.match(new RegExp(name + '=([^;]+)'));
- result && (result = JSON.parse(result[1]));
- return result;
-}
-
-function list_cookies() {
-    var theCookies = document.cookie.split(';');
-    var aString = '';
-    for (var i = 1 ; i <= theCookies.length; i++) {
-        aString += i + ' ' + theCookies[i-1] + "\n";
-    }
-    return aString;
 }
 
 ReactDOM.render(
