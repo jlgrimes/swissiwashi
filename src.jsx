@@ -424,7 +424,7 @@ class GeneratePairings extends React.Component {
     
         handleWin(e) {
             // Make sure we don't already have a result
-            if (e.target.parentElement.parentElement.classList.contains('list-group-item-info')) {
+            if (e.target.parentElement.parentElement.classList.contains('list-group-item-primary')) {
                 return;
             }
             
@@ -452,7 +452,7 @@ class GeneratePairings extends React.Component {
     
     handleTie(e) {
                     // Make sure we don't already have a result
-            if (e.target.parentElement.parentElement.classList.contains('list-group-item-info'))
+            if (e.target.parentElement.parentElement.classList.contains('list-group-item-primary'))
                 return;
             
             // Say we have a result
@@ -486,7 +486,7 @@ class GeneratePairings extends React.Component {
     
     handleUncomplete(e) {
         //console.log(e.target.parentElement.parentElement);
-        if (!e.target.parentElement.parentElement.classList.contains('list-group-item-info'))
+        if (!e.target.parentElement.parentElement.classList.contains('list-group-item-primary'))
             return;
         
         let firstPlayer = e.target.parentElement.firstChild;
@@ -517,7 +517,7 @@ class GeneratePairings extends React.Component {
 
 let uh = (p) => {
     //console.log(p);
-    if (p.complete) return "list-group-item-info ";
+    if (p.complete) return "list-group-item-primary list-group-item-action ";
     return "";
 }
 
@@ -614,7 +614,7 @@ class Pairings extends React.Component {
         let HTMLplayerDropped = document.getElementById(name);
         
         // If the player dropped hasn't completed their round yet, give the other player the win
-        if (!HTMLplayerDropped.parentElement.parentElement.classList.contains("list-group-item-info")) {
+        if (!HTMLplayerDropped.parentElement.parentElement.classList.contains("list-group-item-primary")) {
             let HTMLpairedPlayer = getPairedPlayerHTML(HTMLplayerDropped);
             console.log(HTMLpairedPlayer.name);
             HTMLpairedPlayer.wins++;
@@ -827,7 +827,7 @@ class Standings extends React.Component {
                                          <div class="card-body">
                                              <ul class="list-group">
                                             {p.played.map((q, j) =>
-                                                           <li class={"list-group-item " + shadeRoundResult(q.result)}>Round {addOne(j)} {q.name} - {q.result}</li>
+                                                           <li class={"list-group-item list-group-item-action " + shadeRoundResult(q.result)}>Round {addOne(j)} {q.name} - {q.result}</li>
                                                            )}
                                             </ul>
                                          </div> 
@@ -859,14 +859,14 @@ class DisplayPlayer extends React.Component {
 }
 
 function shadeRoundResult(result) {
-        if (result == "win") return "list-group-item-success";
-        if (result == "tie") return "list-group-item-warning";
-        if (result == "loss") return "list-group-item-danger";
+        if (result == "win") return "list-group-item-success list-group-item-action";
+        if (result == "tie") return "list-group-item-warning list-group-item-action";
+        if (result == "loss") return "list-group-item-danger list-group-item-action";
     
         if (result.played.length > 0 && result.played.length == round)
             return shadeRoundResult(result.played[result.played.length - 1].result);
     
-        return "";
+        return "list-group-item-action";
     }
 
 function findPlayer (name, ps) {
