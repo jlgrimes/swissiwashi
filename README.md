@@ -1,8 +1,12 @@
-POM (Packala Open Manager) is a lightweight TOM clone written in React for people who don't have access to TOM or would prefer something more lightweight. POM is only to be used for *unsanctioned* events.
+Swissiwashi is a lightweight TOM clone written in React for people who don't have access to TOM or would prefer something more lightweight. Swissiwashi is only to be used for *unsanctioned* events.
 
 Everything I'm going to say in the calculations section is essentially a carbon copy of [Chris Schemanske's awesome article on how this stuff works](https://sixprizes.com/tiebreakers/), I just put it into code.
 
 Special thanks to Kenny Packala, Solomon Shurge, and Chris Schemanske for testing.
+
+## What is TOM?
+
+First off, I'd like to preface the program that inspired this one, which is TOM (Tournament Operations Manager). TOM is the official tournament that Pokemon TCG tournament organizers use for every tournament imaginable in the TCG. Swissiwashi isn't meant to replace TOM by any means, it's just meant to be more lightweight and accessible to all.
 
 # Data Structures
 
@@ -42,9 +46,9 @@ pairings = {
 }
 ```
 
-# Rounds
+## Rounds
 
-Recommended rounds numbers are taken from powers of two (9-16 players: 4 rounds, 17-32 players: 5 rounds, etc).
+Recommended rounds numbers are taken from [the Pokemon website](https://www.pokemon.com/us/play-pokemon/about/tournaments-rules-and-resources/).
 
 # Calculations
 
@@ -137,9 +141,11 @@ let tournament = {
 };
 ```
 
+You can either export your tournament into your browser's local storage (similar to cookies/cache), or download it as a json file for offline storage. Any tournaments saved offline can be uploaded at any time for viewing the final standings page (includes standings, matches played for individual players, and round progression).
+
 ## Known Issues
 
-* Can't drop preset players?
+None at the moment
 
 ## Features in Progress
 

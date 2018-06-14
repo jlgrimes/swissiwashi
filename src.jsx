@@ -181,8 +181,13 @@ class Initialize extends React.Component {
         let players = this.state.players;
         return (
             <div class="container" id="initialize">
-                <h1>POM</h1>
-                <h2>Packala Open Manager</h2>
+            <div class="row">
+            <img src="logo.png" class="logo"></img>
+                <div class="col">
+                    <h1>Swissiwashi</h1>
+                    <h5>Swiss tournament generator made in React</h5>
+                </div>
+            </div>
                 
                 <div class="row">
                 <div class="md-form input-group col s6">

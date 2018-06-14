@@ -68,3 +68,7 @@ ul {
     display: table-cell;
     vertical-align: middle;
 }
+
+.logo {
+    height: 75px
+}
