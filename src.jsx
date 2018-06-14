@@ -424,7 +424,7 @@ class GeneratePairings extends React.Component {
     
         handleWin(e) {
             // Make sure we don't already have a result
-            if (e.target.parentElement.parentElement.classList.contains('active')) {
+            if (e.target.parentElement.parentElement.classList.contains('list-group-item-info')) {
                 return;
             }
             
@@ -452,7 +452,7 @@ class GeneratePairings extends React.Component {
     
     handleTie(e) {
                     // Make sure we don't already have a result
-            if (e.target.parentElement.parentElement.classList.contains('active'))
+            if (e.target.parentElement.parentElement.classList.contains('list-group-item-info'))
                 return;
             
             // Say we have a result
@@ -486,7 +486,7 @@ class GeneratePairings extends React.Component {
     
     handleUncomplete(e) {
         //console.log(e.target.parentElement.parentElement);
-        if (!e.target.parentElement.parentElement.classList.contains('active'))
+        if (!e.target.parentElement.parentElement.classList.contains('list-group-item-info'))
             return;
         
         let firstPlayer = e.target.parentElement.firstChild;
@@ -517,7 +517,7 @@ class GeneratePairings extends React.Component {
 
 let uh = (p) => {
     //console.log(p);
-    if (p.complete) return "active ";
+    if (p.complete) return "list-group-item-info ";
     return "";
 }
 
@@ -614,7 +614,7 @@ class Pairings extends React.Component {
         let HTMLplayerDropped = document.getElementById(name);
         
         // If the player dropped hasn't completed their round yet, give the other player the win
-        if (!HTMLplayerDropped.parentElement.parentElement.classList.contains("active")) {
+        if (!HTMLplayerDropped.parentElement.parentElement.classList.contains("list-group-item-info")) {
             let HTMLpairedPlayer = getPairedPlayerHTML(HTMLplayerDropped);
             console.log(HTMLpairedPlayer.name);
             HTMLpairedPlayer.wins++;
