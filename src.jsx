@@ -17,10 +17,13 @@ class Initialize extends React.Component {
         
         numRounds = recommendedRounds();
         this.forceUpdate();
-        
-        console.log(localStorage);
-        
         tournamentName = "";
+        
+        let arr = ["yo", "whats", "poppin", "people"];
+        let spliced = arr.splice(0, 4);
+        //arr.pop();
+        console.log(arr);
+        console.log(spliced);
     }
     
     handleNameChange(event) {
@@ -275,8 +278,12 @@ function newPairings(ifRepair) {
     
     // Pushing the bye pairing
     if (tempPlayers.length % 2 != 0) {
+        let bye = findPlayer(tempPlayers[tempPlayers.length - 1].name);
+
+        bye.played.push({name: "bye", result: "win"});
+        
         byePlayer = {
-                first: JSON.parse(JSON.stringify(tempPlayers[tempPlayers.length - 1])),
+                first: bye,
                 second: "bye",
             complete: true
             };
@@ -285,77 +292,43 @@ function newPairings(ifRepair) {
         tempPlayers.pop();
     }
 
-    console.log("begin");
-    while (tempPlayers.length > 0) {
-        let matchPointTierBegin = 1;
-        let matchPointTierEnd = tempPlayers.map(p => matchPoints(p)).lastIndexOf(matchPoints(tempPlayers[1]));
-        
-        //console.log(matchPointTierEnd);
-        
-        // We're going to extend the range of the match point tier range to 2 if need be in order to accomodate an odd number of players in a match point tier
-        let matchPointTierRange = matchPointTierEnd - matchPointTierBegin;
-        
-        //console.log("range " + matchPointTierRange);
-        
-        let firstPlayerPos = 0;
-        let firstPlayer = findPlayer(tempPlayers[firstPlayerPos].name);
-        tempPlayers.splice(firstPlayerPos, 1);
-        
-        let secondPlayerPos = Math.floor(Math.random() * matchPointTierRange);
-        let secondPlayer = findPlayer(tempPlayers[secondPlayerPos].name);
-        
-        // WIPPPPPP
-        let matchPointTierSpliced = range(0, matchPointTierRange); 
-        let restOfPlayersSpliced = range(matchPointTierRange, tempPlayers.length);
-        
-        let newSecondPlayerPos = '', newSecondPlayerPosPos = '';
-        while (findPlayedIndex(firstPlayer, secondPlayer.name) && matchPointTierSpliced.length > 0) {
-            if (matchPointTierSpliced.length > 1) {
-                newSecondPlayerPosPos = Math.floor(Math.random() * matchPointTierSpliced.length);
-                newSecondPlayerPos = matchPointTierSpliced[newSecondPlayerPosPos];
-                secondPlayerPos = newSecondPlayerPos;
-                secondPlayer = findPlayer(tempPlayers[newSecondPlayerPos].name);
-            }
-            else {
-                newSecondPlayerPosPos = 0;
-            }
-            matchPointTierSpliced.splice(newSecondPlayerPosPos, 1);
-        }
-        
-        while (findPlayedIndex(firstPlayer, secondPlayer.name) && restOfPlayersSpliced.length > 0) {
-            //console.log('second loop'); 
-            if (restOfPlayersSpliced.length > 1) {
-                newSecondPlayerPosPos = Math.floor(Math.random() * restOfPlayersSpliced.length);
-                newSecondPlayerPos = restOfPlayersSpliced[newSecondPlayerPosPos];
-                secondPlayerPos = newSecondPlayerPos;
-                secondPlayer = findPlayer(tempPlayers[newSecondPlayerPos].name);
-            }
-            else {
-                newSecondPlayerPosPos = 0;
-            }
-            
-           restOfPlayersSpliced.splice(newSecondPlayerPosPos, 1);
-        }
+    while (tempPlayers.length > 2) {
+        let firstPlayer = findPlayer(tempPlayers[0].name);
+        tempPlayers.splice(0, 1);
+        //console.log(tempPlayers);
+        let mpTierEnd = tempPlayers.map(p => matchPoints(p)).lastIndexOf(matchPoints(tempPlayers[1]));
+        let pos = Math.floor(Math.random() * mpTierEnd);
+        let secondPlayer = findPlayer(tempPlayers[pos].name, tempPlayers);
+        //console.log(firstPlayer);
+        //console.log(secondPlayer);
+        //console.log(findPlayedIndex(firstPlayer, secondPlayer.name));
         
         if (findPlayedIndex(firstPlayer, secondPlayer.name)) {
-            toastr.error("No pairings possible.");
-            matchesComplete = pairings.length;
-            matchesErrorState = true;
-            round--;
-            //$(".collection-item").addClass("active");
-            return;
+            let tempPlayersCopy = JSON.parse(JSON.stringify(tempPlayers));
+            
+            // Should return the secondPlayer (from tempPlayers)
+            let returnValue = repair(firstPlayer, tempPlayers, tempPlayersCopy, mpTierEnd);
+            
+            secondPlayer = findPlayer(returnValue.name, tempPlayers);
+            pos = findPlayerIndex(returnValue.name, tempPlayers);
         }
+        tempPlayers.splice(pos, 1);
         
-        tempPlayers.splice(secondPlayerPos, 1);
-        
-        //console.log(firstPlayer);
-
+        // Make secondPlayer actually part of the players array
+        secondPlayer = findPlayer(secondPlayer.name);
         pairings.push({
             first: firstPlayer,
             second: secondPlayer,
             complete: false
         });
     }
+    
+    pairings.push({
+        first: findPlayer(tempPlayers[0].name),
+        second: findPlayer(tempPlayers[1].name),
+        complete: false
+    })
+            console.log("right before");
     
     //$(".active").removeClass("active")
     
@@ -368,7 +341,40 @@ function newPairings(ifRepair) {
         pairingsHistory.push(JSON.parse(JSON.stringify(pairings)));
         rounds.push(round);
     }
-    //this.forceUpdate();
+}
+
+function repair(player, playersIn, repairPlayers, mpTierEnd) {
+    if (repairPlayers.length == 0) {
+        toastr.error("No pairings possible.");
+        matchesComplete = pairings.length;
+        matchesErrorState = true;
+        round--;
+        return false;
+    }
+    
+    if (mpTierEnd == 0) {
+        let mpTierEndNew = repairPlayers.map(p => matchPoints(p)).lastIndexOf(matchPoints(repairPlayers[1]));
+        return repair(player, playersIn, repairPlayers, mpTierEndNew)
+    }
+    
+    let potentialPairedPlayer = repairPlayers[Math.floor(Math.random() * mpTierEnd)];
+    
+    //console.log("length:" + repairPlayers.length + " position:" + mpTierEnd + " object:");
+    //console.log(potentialPairedPlayer);
+    //console.log("p");
+    //console.log(player);
+    let potentialIndex = findPlayedIndex(player, potentialPairedPlayer.name);
+    
+    // Check if we the paired player has already played the first player
+    if (!potentialIndex) {
+        console.log("LMAO");
+        repairPlayers.splice(findPlayerIndex(potentialPairedPlayer.name, repairPlayers), 1);
+        mpTierEnd--;
+        return repair(player, playersIn, repairPlayers, mpTierEnd);
+    }
+    
+    //players.splice(findPlayerIndex(potentialPairedPlayer, playersIn), 1);
+    return potentialPairedPlayer;
 }
 
 class GeneratePairings extends React.Component {
@@ -845,6 +851,7 @@ class DisplayPlayer extends React.Component {
 }
 
 function findPlayer (name, ps) {
+    if (name == "bye") return "bye";
     if (ps === undefined) ps = players;
     
     for (let p in ps)
@@ -869,13 +876,24 @@ let winPercentage = player => Math.max(0.25, (resistanceWins(player) + player.ti
 let resistance = (player, ps, ifDynamic, ifFloat) => {
     if (ifDynamic && !isNaN(player.resistance)) return player.resistance;
     if (ps === undefined) ps = players;
-    if (player == "bye") return;
+    if (player == "bye" || player.name == "bye") return;
     
     let resistanceTotal = 0;
-    for (let p in player.played)
-        resistanceTotal += winPercentage(findPlayer(player.played[p].name, ps));
+    let length = player.played.length
+    for (let p in player.played) {
+        if (player.played[p].name == "bye")
+            length--;
+        else
+            resistanceTotal += winPercentage(findPlayer(player.played[p].name, ps));
+    }
     
-    player.resistance = Number.parseFloat(resistanceTotal / player.played.length * 100).toFixed(2);
+    if (resistanceTotal == 0) resistanceTotal = NaN;
+    
+    player.resistance = Number.parseFloat(resistanceTotal / length * 100).toFixed(2);
+    
+    console.log("the player is");
+    console.log(player);
+    
     return player.resistance;
 }
 
@@ -884,20 +902,24 @@ function oppResistance (player, ps) {
     // No ifDynamic parameter because this is always executed at the Final Standings page
     if (!isNaN(player.oppResistance)) return player.oppResistance;
     if (ps === undefined) ps = players;
+    if (player == "bye" || player.name == "bye") return;
 
-    let oppResistanceTotal = 0;
+    let oppResistanceTotal = 0, length = player.played.length;
+    
     for (let p in player.played) {
-        oppResistanceTotal += Number.parseFloat(resistance(findPlayer(player.played[p].name, ps), ps, true));
+        if (player.played[p].name == "bye")
+            length--;
+        else {
+            console.log(player.played[p].name);
+            oppResistanceTotal += Number.parseFloat(resistance(findPlayer(player.played[p].name, ps), ps, true));
+        }
     }
     
-    player.oppResistance = Number.parseFloat(oppResistanceTotal / player.played.length).toFixed(2);
+    console.log("beep");
+    console.log(player);
     
-    console.log(oppResistanceTotal);
-    console.log(player.played.length);
-    console.log("calcs");
-    console.log(oppResistanceTotal / player.played.length);
-    console.log(Number.parseFloat(oppResistanceTotal / player.played.length).toFixed(2));
-    console.log(player.oppResistance);
+    player.oppResistance = Number.parseFloat(oppResistanceTotal / length).toFixed(2);
+
     return player.oppResistance;
 }
 
@@ -1017,9 +1039,11 @@ function uncompletePairing(player) {
 
 let matchPoints = player => player.wins * 3 + player.ties;
 
-let findPlayerIndex = (name) => {
-    for (let p in players)
-        if (players[p].name == name)
+let findPlayerIndex = (name, ps) => {
+    if (ps == undefined) ps = players;
+    
+    for (let p in ps)
+        if (ps[p].name == name)
             return p;
     
     return -1;

@@ -2,6 +2,8 @@ POM (Packala Open Manager) is a lightweight TOM clone written in React for peopl
 
 Everything I'm going to say in the calculations section is essentially a carbon copy of [Chris Schemanske's awesome article on how this stuff works](https://sixprizes.com/tiebreakers/), I just put it into code.
 
+Special thanks to Kenny Packala, Solomon Shurge, and Chris Schemanske for testing.
+
 # Data Structures
 
 ## Players
@@ -122,7 +124,7 @@ If the players have tied op/op win %, we have to go deeper. This and resistance 
 
 Basically, if the two players played each other, the winner gets placed higher. this doesn't happen very often, so we usually have to resort to standing of the last opponent.
 
-# Exporting Tournaments
+## Exporting Tournaments
 
 Tournaments are exported as json files with the following format:
 
