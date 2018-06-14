@@ -387,7 +387,7 @@ function repair(player, playersIn, repairPlayers, mpTierEnd) {
     let potentialIndex = findPlayedIndex(player, potentialPairedPlayer.name);
     
     // Check if we the paired player has already played the first player
-    if (!potentialIndex) {
+    if (potentialIndex) {
         console.log("LMAO");
         repairPlayers.splice(findPlayerIndex(potentialPairedPlayer.name, repairPlayers), 1);
         mpTierEnd--;
