@@ -40,19 +40,26 @@ class Initialize extends React.Component {
             this.addPlayer();
     }
     
-    addPlayer() {
-        if (this.state.newPlayer == undefined || this.state.newPlayer == "") {
+    addPlayer(name) {
+        let alerts = true;
+        if (name == undefined) name = this.state.newPlayer;
+        else alerts = false;
+        if (name == "bye") {
+            toastr.warning("For the sake of not breaking the program, please don't name a player 'bye'.");
+            return;
+        }
+        if (name == undefined || name == "") {
             toastr.error("Please input a name");
             return;
         }
         
-        if (findPlayer(this.state.newPlayer)) {
+        if (findPlayer(name)) {
             toastr.error("Please input a unique name");
             return;
         }
         
         players.push({
-            name: this.state.newPlayer,
+            name: name,
             wins: 0,
             ties: 0,
             losses: 0,
@@ -66,7 +73,9 @@ class Initialize extends React.Component {
         });
     
         $("#player-input").val("");
-        toastr.success(this.state.newPlayer + " added!");
+        
+        if (alerts)
+            toastr.success(name + " added!");
         numRounds = recommendedRounds();
         
         numRounds = recommendedRounds();
@@ -85,8 +94,11 @@ class Initialize extends React.Component {
     }
     
     loadPreset() {
-        players = JSON.parse(JSON.stringify(presetPlayers));
-        this.setState({players: presetPlayers});
+        //players = JSON.parse(JSON.stringify(presetPlayers));
+        //this.setState({players: presetPlayers});
+        players = [];
+        for (let p in presetPlayers)
+            this.addPlayer(presetPlayers[p].name);
         toastr.success("Preset loaded!");
         //$("#number-rounds").val(recommendedRounds());
         numRounds = recommendedRounds();
@@ -114,6 +126,10 @@ class Initialize extends React.Component {
     }
     
     startTournament() {
+        if (players.length == 0) {
+            toastr.warning("You can't start a tournament with no players, silly");
+            return;
+        }
         shuffle(players);
         
         tournamentName = $("#tournament-name").val();
@@ -400,9 +416,9 @@ class GeneratePairings extends React.Component {
             //this.setState({players: players});
             //alert(p.name + " " + p.wins);
             if (p == "bye")
-                return <div class="col" id="bye">BYE</div>;
+                return <div class="col list-item-cust" id="bye">BYE</div>;
             return (
-                <div class="col" id={p.name} onClick={(e) => this.handleWin(e)}>{displayPlayer(p)}</div>
+                <div class={"col list-item-cust " + shadeRoundResult(p)} id={p.name} onClick={(e) => this.handleWin(e)}>{displayPlayer(p)}</div>
             );
         }
     
@@ -489,7 +505,7 @@ class GeneratePairings extends React.Component {
                     <div class={"list-group-item pairing-item " + uh(p)} onClick={e => this.handleUncomplete(e)}>
                                                                  <div class="row">
                         {this.displayPlayer(p.first)}
-                        <div class="col center-align" onClick={(e) => this.handleTie(e)}> vs </div>
+                        <div class="col-1 center-align vs" onClick={(e) => this.handleTie(e)}> vs </div>
                         {this.displayPlayer(p.second)}
                                                                  </div>
                     </div>
@@ -610,7 +626,6 @@ class Pairings extends React.Component {
         }
         
         players.splice(findPlayerIndex(name), 1);
-        
         toastr.success(name + " has been dropped!");
     }
     
@@ -748,7 +763,6 @@ class Standings extends React.Component {
         this.state = {name: props.name, date: props.date, players: props.players, pairingsHistory: props.pairingsHistory, rounds: props.rounds};
         
         this.renderTabBar = this.renderTabBar.bind(this);
-        this.shadeRoundResult = this.shadeRoundResult.bind(this);
         this.renderUnclickablePlayers = this.renderUnclickablePlayers.bind(this);
         this.newTournament = this.newTournament.bind(this);
     }
@@ -767,12 +781,6 @@ class Standings extends React.Component {
                                         </li>)}
                 </ul>
         );
-    }
-    
-    shadeRoundResult(result) {
-        if (result == "win") return "list-group-item-success";
-        if (result == "tie") return "list-group-item-warning";
-        if (result == "loss") return "list-group-item-danger";
     }
     
     renderUnclickablePlayers() { return(<div class="tab-content">{this.state.pairingsHistory.map((curr, currPos) =>
@@ -819,7 +827,7 @@ class Standings extends React.Component {
                                          <div class="card-body">
                                              <ul class="list-group">
                                             {p.played.map((q, j) =>
-                                                           <li class={"list-group-item " + this.shadeRoundResult(q.result)}>Round {addOne(j)} {q.name} - {q.result}</li>
+                                                           <li class={"list-group-item " + shadeRoundResult(q.result)}>Round {addOne(j)} {q.name} - {q.result}</li>
                                                            )}
                                             </ul>
                                          </div> 
@@ -849,6 +857,17 @@ class DisplayPlayer extends React.Component {
             </div>);
     }
 }
+
+function shadeRoundResult(result) {
+        if (result == "win") return "list-group-item-success";
+        if (result == "tie") return "list-group-item-warning";
+        if (result == "loss") return "list-group-item-danger";
+    
+        if (result.played.length > 0 && result.played.length == round)
+            return shadeRoundResult(result.played[result.played.length - 1].result);
+    
+        return "";
+    }
 
 function findPlayer (name, ps) {
     if (name == "bye") return "bye";

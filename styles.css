@@ -52,3 +52,19 @@ ul {
 .center-align {
     text-align: center;
 }
+
+.pairing-item {
+    padding-top: 0;
+    padding-bottom: 0;
+    padding-left: 15px;
+    padding-right: 15px;
+    display: table;
+    overflow: hidden;
+}
+
+.list-item-cust {
+    height: 50px;
+    text-align: center;
+    display: table-cell;
+    vertical-align: middle;
+}

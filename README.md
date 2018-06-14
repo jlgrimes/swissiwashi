@@ -139,15 +139,13 @@ let tournament = {
 
 ## Known Issues
 
-* Sometimes round pairings don't want to go all the way through
-* vs formatted weird
 * Can't drop preset players?
-* Standings past opponent's win percentage (eg opponent's opponent's win percentage) is not calculated.
 
 ## Features in Progress
 
 Along with comments listed above.
 
+* vs not floating to middle
 * Formatting pairings UI for individual rows. Table # doesn't want to work
 * Better round progression UI
 * Just better UI
