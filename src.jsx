@@ -4,6 +4,7 @@ class Initialize extends React.Component {
         this.state = {players: players};
         this.handleNameChange = this.handleNameChange.bind(this);
         this.handleRoundChange = this.handleRoundChange.bind(this);
+        this.handlePresetChange = this.handlePresetChange.bind(this);
         this.startTournament = this.startTournament.bind(this);
         this.loadPreset = this.loadPreset.bind(this);
         this.loadUploadedTournament = this.loadUploadedTournament.bind(this); this.loadLocalTournament = this.loadLocalTournament.bind(this);
@@ -35,9 +36,18 @@ class Initialize extends React.Component {
         this.forceUpdate();
     }
     
+    handlePresetChange(event) {
+        this.setState({presetNum: event.target.value});
+    }
+    
     handleKeyPress(target) {
         if(target.charCode==13)
             this.addPlayer();
+    }
+    
+    handleKeyPressPreset(target) {
+        if (target.charCode == 13)
+            this.loadPreset();
     }
     
     addPlayer(name) {
@@ -94,12 +104,16 @@ class Initialize extends React.Component {
     }
     
     loadPreset() {
+        if (this.state.presetNum == undefined) {
+            toastr.success("0 players loaded!");
+            return;
+        }
         //players = JSON.parse(JSON.stringify(presetPlayers));
         //this.setState({players: presetPlayers});
         players = [];
-        for (let p in presetPlayers)
-            this.addPlayer(presetPlayers[p].name);
-        toastr.success("Preset loaded!");
+        for (let i = 0; i < this.state.presetNum; i++)
+            this.addPlayer("Player " + addOne(i));
+        toastr.success(this.state.presetNum + " players loaded!");
         //$("#number-rounds").val(recommendedRounds());
         numRounds = recommendedRounds();
         this.forceUpdate();
@@ -190,19 +204,18 @@ class Initialize extends React.Component {
             </div>
                 
                 <div class="row">
-                <div class="md-form input-group col s6">
-                        <input type="text" class="form-control" placeholder="Tournament name" id="tournament-name" />
-                    </div>
-                    
-                    <div class="md-form input-group col s3">
-                        <input type="number" value={numRounds} placeholder="Number of Rounds" class="form-control" id="number-rounds" onChange={this.handleRoundChange} />
+                    <div class="md-form input-group col 6">
+                            <input type="text" class="form-control" placeholder="Tournament name" id="tournament-name" />
+                        </div>
 
-                        <div class="input-group-append">
-                            <span class="input-group-text" id="basic-addon2">Rounds</span>
-                          </div>
-                    </div>
-                    
-                    </div>
+                        <div class="md-form input-group col">
+                            <input type="number" value={numRounds} placeholder="Number of Rounds" class="form-control" id="number-rounds" onChange={this.handleRoundChange} />
+
+                            <div class="input-group-append">
+                                <span class="input-group-text" id="basic-addon2">Rounds</span>
+                              </div>
+                        </div>
+                </div>
                 
                 <div class="row">
                     
@@ -212,11 +225,16 @@ class Initialize extends React.Component {
                         <button class="btn btn-primary waves-effect m-0" type="button" onClick={() => this.addPlayer()}>Enter</button>
                       </div>
                     </div>
+                    
+                    <div class="md-form input-group col s6">
+                        <input type="number" class="form-control" placeholder="Number of default players" id="player-input" onChange={this.handlePresetChange} onKeyPress={(e) => this.handleKeyPressPreset(e)}/>
+                      <div class="input-group-append">
+                        <button class="btn btn-secondary waves-effect m-0" type="button" onClick={() => this.loadPreset()}>Load</button>
+                      </div>
+                    </div>
                 </div>
                 
                 <button onClick={() => this.startTournament()} class="btn btn-primary">Start Tournament</button>
-                
-                <button class="btn btn-secondary" onClick={() => this.loadPreset()}>Load Preset Players</button>
                 
                 <div class="btn btn-secondary" data-toggle="modal" data-target="#load-modal">Load Tournament</div>
                 
@@ -280,6 +298,7 @@ function newPairings(ifRepair) {
     //console.log("yo");
     matchesComplete = 0;
     players.sort(comparePlayers);
+    console.log(players);
     
     if (round == 1)
         shuffle(players);
@@ -315,9 +334,12 @@ function newPairings(ifRepair) {
 
     while (tempPlayers.length > 2) {
         let firstPlayer = findPlayer(tempPlayers[0].name);
+        console.log(tempPlayers[0].name + " is the OG");
         tempPlayers.splice(0, 1);
         //console.log(tempPlayers);
-        let mpTierEnd = tempPlayers.map(p => matchPoints(p)).lastIndexOf(matchPoints(tempPlayers[1]));
+        let mpTierEnd = tempPlayers.map(p => matchPoints(p)).lastIndexOf(matchPoints(tempPlayers[0]));
+        console.log(tempPlayers[mpTierEnd].name);
+        
         let pos = Math.floor(Math.random() * mpTierEnd);
         let secondPlayer = findPlayer(tempPlayers[pos].name, tempPlayers);
         //console.log(firstPlayer);
@@ -638,7 +660,7 @@ class Pairings extends React.Component {
         if (round != "DONE" && round <= numRounds) {
             return(<div class="container">
                 <h1 id="tournament-name-display">{tournamentName}</h1>
-                <h2 id="round-number">Round {round}</h2>
+                <h2 id="round-number">Round {round} of {numRounds}</h2>
                 <p>Click on a player to assign the win, click on vs to assign both players the tie, and click on an already completed match to undo.</p>
                 
                 <div class="md-form">
@@ -915,8 +937,8 @@ let resistance = (player, ps, ifDynamic, ifFloat) => {
     
     player.resistance = Number.parseFloat(resistanceTotal / length * 100).toFixed(2);
     
-    console.log("the player is");
-    console.log(player);
+    //console.log("the player is");
+    //console.log(player);
     
     return player.resistance;
 }
