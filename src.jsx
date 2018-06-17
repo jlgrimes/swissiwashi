@@ -598,10 +598,18 @@ class Pairings extends React.Component {
     }
     
     repair() {
-        if (matchesComplete > 0) {
+        if ((matchesComplete > 0 && players.length % 2 == 0) || matchesComplete > 1) {
             toastr.error("You can't repair in the middle of a round");
             return;
         }
+        
+        if (players.length % 2 != 0) {
+            console.log("sahhh dude");
+            console.log(players[players.length - 1]);
+            players[players.length - 1].played.pop();
+            players[players.length - 1].wins--;
+        }
+        
         newPairings(true);
         //$("#bye").parent().parent().addClass("active");
         
