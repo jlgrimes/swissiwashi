@@ -111,8 +111,11 @@ class Initialize extends React.Component {
         //players = JSON.parse(JSON.stringify(presetPlayers));
         //this.setState({players: presetPlayers});
         players = [];
-        for (let i = 0; i < this.state.presetNum; i++)
+        for (let i = 0; i < this.state.presetNum; i++) {
             this.addPlayer("Player " + addOne(i));
+            //$("#loading").text(i);
+            this.forceUpdate();
+        }
         toastr.success(this.state.presetNum + " players loaded!");
         //$("#number-rounds").val(recommendedRounds());
         numRounds = recommendedRounds();
@@ -268,6 +271,7 @@ class Initialize extends React.Component {
                 <button class="btn btn-danger" onClick={() => {$("#initialize").addClass("animated hinge")}}>Destroy this page</button>
                 
                 <h5 id="player-count">{displayPlayerCount()}</h5>
+                <p id="loading"></p>
                 
                 <div id="pairings" class="list-group">
                     {players.map(p => <a class="list-group-item" onClick={(e) => this.deletePlayer(e)} id={p.name}>{p.name}</a>)}
@@ -527,7 +531,6 @@ class GeneratePairings extends React.Component {
 
         render() {
             return (
-                <div>
                 <div class="list-group">{currentPairings.filter(p => p.first.name.indexOf(searchQuery) >= 0 || (p.second != "bye" && p.second.name.indexOf(searchQuery) >= 0)).map((p, i) => 
                     <div class={"list-group-item pairing-item " + uh(p)} onClick={e => this.handleUncomplete(e)}>
                                                                  <div class="row">
@@ -537,7 +540,6 @@ class GeneratePairings extends React.Component {
                                                                  </div>
                     </div>
                 )}</div>
-                </div>
             );
         }
     }
@@ -562,6 +564,7 @@ class Pairings extends React.Component {
         this.searchBarUpdate = this.searchBarUpdate.bind(this);
         this.exportTournament = this.exportTournament.bind(this);
         this.saveTournamentLocalStorage = this.saveTournamentLocalStorage.bind(this);
+        this.autoWins = this.autoWins.bind(this);
     }
     
     componentDidMount() {
@@ -656,6 +659,22 @@ class Pairings extends React.Component {
         toastr.success(name + " has been dropped!");
     }
     
+    autoWins() {
+        if (matchesComplete == pairings / 2)
+            return;
+        for (let p in pairings) {    
+            let first = pairings[p].first, second =  pairings[p].second;
+            first.wins++;
+            second.losses++;
+            
+            // Marks that each player has played one another
+             first.played.push({name: second.name, result: "win"});
+             second.played.push({name: first.name, result: "loss"});
+            matchesComplete++;
+        }
+        this.forceUpdate();
+    }
+    
     renderRounds() {
         if (round != "DONE" && round <= numRounds) {
             return(<div class="container">
@@ -667,16 +686,20 @@ class Pairings extends React.Component {
                     <i class="fa fa-search prefix"></i>
                     <input type="text" class="form-control" placeholder="Search for a player" onChange={(e) => this.searchBarUpdate(e)}></input>
                 </div>
-       
-                <GeneratePairings round={0} />
 
                 <button class="btn btn-primary" onClick={() => this.nextRound()}>Next Round</button>
+                    
+                <button class="btn btn-warning" onClick={() => this.endTournament()}>Force End Tournament</button>
                 
                 <button class="btn btn-secondary" data-toggle="modal" onClick={() => this.repair()}>Repair</button>
                     
                 <button class="btn btn-secondary" data-toggle="modal" data-target="#drop-modal">Drop Player</button>
                     
-                <button class="btn btn-warning" onClick={() => this.endTournament()}>Force End Tournament</button>
+                <button class="btn btn-secondary" onClick={() => this.autoWins()}>Auto Wins</button>
+                    
+                <p></p>
+                
+                <GeneratePairings round={0} />
                     
                 <div class="modal fade" id="drop-modal" tabindex="-1" role="dialog" aria-labelledby="drop-modal-label" aria-hidden="true">
                     <div class="modal-dialog" role="document">
