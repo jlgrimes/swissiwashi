@@ -305,6 +305,10 @@ let displayPlayerCount = () => {
 }
 
 function newPairings(ifRepair) {
+    if (round == 2 && players.length == 2) {
+        noPairingsPossible();
+        return;
+    }
     //console.log("yo");
     matchesComplete = 0;
     players.sort(comparePlayers);
@@ -362,6 +366,9 @@ function newPairings(ifRepair) {
             // Should return the secondPlayer (from tempPlayers)
             let returnValue = repair(firstPlayer, tempPlayers, tempPlayersCopy, mpTierEnd);
             
+            if (returnValue == false)
+                return;
+            
             secondPlayer = findPlayer(returnValue.name, tempPlayers);
             pos = findPlayerIndex(returnValue.name, tempPlayers);
         }
@@ -396,15 +403,21 @@ function newPairings(ifRepair) {
     }
 }
 
+function noPairingsPossible() {
+    toastr.error("No pairings possible.");
+    matchesComplete = pairings.length;
+    matchesErrorState = true;
+    round--;
+}
+
 function repair(player, playersIn, repairPlayers, mpTierEnd) {
-    if (repairPlayers.length == 0) {
-        toastr.error("No pairings possible.");
-        matchesComplete = pairings.length;
-        matchesErrorState = true;
-        round--;
+    if (repairPlayers.length == 1) {
+        noPairingsPossible();
         return false;
     }
     
+    console.log("bam");
+    console.log(repairPlayers);
     if (mpTierEnd == 0) {
         let mpTierEndNew = repairPlayers.map(p => matchPoints(p)).lastIndexOf(matchPoints(repairPlayers[1]));
         return repair(player, playersIn, repairPlayers, mpTierEndNew)
@@ -790,7 +803,7 @@ class Standings extends React.Component {
         if (this.state.mode == "initial") {
             return (
                                                 <div class="btn-group">
-                    <button class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Save Tournament</button>
+                    <button class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-save pr-2" aria-hidden="true"></i>Save Tournament</button>
                     
                     <div class="dropdown-menu">
                         <a class="dropdown-item" onClick={() => this.saveTournamentLocalStorage()}>Local Storage</a>
@@ -878,7 +891,7 @@ class Standings extends React.Component {
                 {this.renderUnclickablePlayers()}
                 <p>Click on each player to view their matchups</p>
                 
-                <button class="btn btn-primary" onClick={() => this.newTournament()}>New Tournament</button>
+                <button class="btn btn-primary" onClick={() => this.newTournament()}><i class="fa fa-plus pr-2" aria-hidden="true"></i>New Tournament</button>
                 
                 {this.renderOptionalButtons()}
                 
@@ -1051,6 +1064,7 @@ let tournamentDate;
 
 function recommendedRounds() {
     let n = players.length;
+    if (n <= 2) return 1;
     if (n <= 7) return 2;
     if (n == 8) return 3;
     if (n <= 12) return 4;
