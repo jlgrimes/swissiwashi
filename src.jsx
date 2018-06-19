@@ -147,6 +147,12 @@ class Initialize extends React.Component {
             toastr.warning("You can't start a tournament with no players, silly");
             return;
         }
+        
+        if (players.length == 1) {
+            toastr.warning("That's a pretty boring tournament...");
+            return;
+        }
+        
         shuffle(players);
         
         tournamentName = $("#tournament-name").val();
@@ -225,21 +231,21 @@ class Initialize extends React.Component {
                     <div class="md-form input-group col s6">
                         <input type="text" class="form-control" placeholder="Player name" id="player-input" onChange={this.handleNameChange} onKeyPress={(e) => this.handleKeyPress(e)} />
                       <div class="input-group-append">
-                        <button class="btn btn-primary waves-effect m-0" type="button" onClick={() => this.addPlayer()}>Enter</button>
+                          <button class="btn btn-primary px-3" type="button" onClick={() => this.addPlayer()}><i class="fa fa-user-plus" aria-hidden="true"></i></button>
                       </div>
                     </div>
                     
                     <div class="md-form input-group col s6">
                         <input type="number" class="form-control" placeholder="Number of default players" id="player-input" onChange={this.handlePresetChange} onKeyPress={(e) => this.handleKeyPressPreset(e)}/>
                       <div class="input-group-append">
-                        <button class="btn btn-secondary waves-effect m-0" type="button" onClick={() => this.loadPreset()}>Load</button>
+                          <button class="btn btn-secondary waves-effect px-3" type="button" onClick={() => this.loadPreset()}><i class="fa fa-download" aria-hidden="true"></i></button>
                       </div>
                     </div>
                 </div>
                 
-                <button onClick={() => this.startTournament()} class="btn btn-primary">Start Tournament</button>
+                <button onClick={() => this.startTournament()} class="btn btn-primary"><i class="fa fa-rocket pr-2" aria-hidden="true"></i>Start Tournament</button>
                 
-                <div class="btn btn-secondary" data-toggle="modal" data-target="#load-modal">Load Tournament</div>
+                <div class="btn btn-secondary" data-toggle="modal" data-target="#load-modal"><i class="fa fa-folder-open pr-2" aria-hidden="true"></i>Load Tournament</div>
                 
                 <div class="modal fade" id="load-modal" tabindex="-1" role="dialog" aria-labelledby="load-modal-label" aria-hidden="true">
                     <div class="modal-dialog" role="document">
@@ -268,7 +274,7 @@ class Initialize extends React.Component {
                 </div>
                 
                 
-                <button class="btn btn-danger" onClick={() => {$("#initialize").addClass("animated hinge")}}>Destroy this page</button>
+                <button class="btn btn-danger" onClick={() => {$("#initialize").addClass("animated hinge")}}><i class="fa fa-close pr-2" aria-hidden="true"></i>Destroy this page</button>
                 
                 <h5 id="player-count">{displayPlayerCount()}</h5>
                 <p id="loading"></p>
@@ -684,15 +690,15 @@ class Pairings extends React.Component {
                     <input type="text" class="form-control" placeholder="Search for a player" onChange={(e) => this.searchBarUpdate(e)}></input>
                 </div>
 
-                <button class="btn btn-primary" onClick={() => this.nextRound()}>Next Round</button>
+                    <button class="btn btn-primary" onClick={() => this.nextRound()}><i class="fa fa-step-forward pr-2" aria-hidden="true"></i>Next Round</button>
                     
-                <button class="btn btn-warning" onClick={() => this.endTournament()}>Force End Tournament</button>
+                <button class="btn btn-warning" onClick={() => this.endTournament()}><i class="fa fa-hourglass-end pr-2" aria-hidden="true"></i>Force End Tournament</button>
                 
-                <button class="btn btn-secondary" data-toggle="modal" onClick={() => this.repair()}>Repair</button>
+                <button class="btn btn-secondary" data-toggle="modal" onClick={() => this.repair()}><i class="fa fa-refresh pr-2" aria-hidden="true"></i>Repair</button>
                     
-                <button class="btn btn-secondary" data-toggle="modal" data-target="#drop-modal">Drop Player</button>
+                <button class="btn btn-secondary" data-toggle="modal" data-target="#drop-modal"><i class="fa fa-user-times pr-2" aria-hidden="true"></i>Drop Player</button>
                     
-                <button class="btn btn-secondary" onClick={() => this.autoWins()} data-toggle="tooltip" data-placement="top" title="Experimental!">Auto Wins</button>
+                <button class="btn btn-secondary" onClick={() => this.autoWins()} data-toggle="tooltip" data-placement="top" title="Experimental!"><i class="fa fa-gears pr-2" aria-hidden="true"></i>Auto Wins</button>
                     
                 <p></p>
                 
