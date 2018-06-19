@@ -467,13 +467,9 @@ class GeneratePairings extends React.Component {
             let thisPlayerObj = findPlayer(e.target.id);
             let nextPlayerObj = getPairedPlayerHTML(e.target);
             
-            // Adds win/losses to player objects            
-            thisPlayerObj.wins++;
-            nextPlayerObj.losses++;
-            
-            // Marks that each player has played one another
-            thisPlayerObj.played.push({name: nextPlayerObj.name, result: "win"});
-            nextPlayerObj.played.push({name: thisPlayerObj.name, result: "loss"});
+            // Adds win/losses to player objects    
+            assignWin(thisPlayerObj, nextPlayerObj);
+            assignLoss(nextPlayerObj, thisPlayerObj);
             
             matchesComplete++;
             //this.setState({players: players});
@@ -655,7 +651,7 @@ class Pairings extends React.Component {
         if (!HTMLplayerDropped.parentElement.parentElement.classList.contains("list-group-item-primary")) {
             let HTMLpairedPlayer = getPairedPlayerHTML(HTMLplayerDropped);
             console.log(HTMLpairedPlayer.name);
-            HTMLpairedPlayer.wins++;
+            assignWin(findPlayer(HTMLpairedPlayer.name), findPlayer(name));
             
             completePairing(name);
             //HTMLplayerDropped.parentElement.parentElement.classList.add("active");
@@ -663,8 +659,10 @@ class Pairings extends React.Component {
             this.forceUpdate();
         }
         
+        droppedPlayers.push(findPlayer(name));
         players.splice(findPlayerIndex(name), 1);
         toastr.success(name + " has been dropped!");
+        console.log(droppedPlayers);
     }
     
     autoWins() {
@@ -916,6 +914,23 @@ class DisplayPlayer extends React.Component {
     }
 }
 
+function assignWin(firstPlayer, secondPlayer) {
+    firstPlayer.wins++;
+    
+    var nameCopy = (' ' + secondPlayer.name).slice(1);
+    firstPlayer.played.push({name: nameCopy, result: "win"});
+}
+
+function assignTie(firstPlayer, secondPlayer) {
+    firstPlayer.ties++;
+    firstPlayer.played.push({name: JSON.parse(JSON.stringify(secondPlayer.name)), result: "tie"});
+}
+
+function assignLoss(firstPlayer, secondPlayer) {
+    firstPlayer.losses++;
+    firstPlayer.played.push({name: JSON.parse(JSON.stringify(secondPlayer.name)), result: "loss"});
+}
+
 function shadeRoundResult(result) {
         if (result == "win") return "list-group-item-success list-group-item-action";
         if (result == "tie") return "list-group-item-warning list-group-item-action";
@@ -927,13 +942,18 @@ function shadeRoundResult(result) {
         return "list-group-item-action";
     }
 
-function findPlayer (name, ps) {
+function findPlayer (name, ps, includeDropped) {
     if (name == "bye") return "bye";
     if (ps === undefined) ps = players;
     
     for (let p in ps)
         if (ps[p].name == name)
             return ps[p];
+    
+    if (includeDropped)
+        for (let p in droppedPlayers)
+            if (droppedPlayers[p].name == name)
+                return droppedPlayers[p];
     
     return false;
 };
@@ -956,12 +976,15 @@ let resistance = (player, ps, ifDynamic, ifFloat) => {
     if (player == "bye" || player.name == "bye") return;
     
     let resistanceTotal = 0;
-    let length = player.played.length
+    
+        console.log("yoo");
+    console.log(player);
+    let length = player.played.length;
     for (let p in player.played) {
         if (player.played[p].name == "bye")
             length--;
         else
-            resistanceTotal += winPercentage(findPlayer(player.played[p].name, ps));
+            resistanceTotal += winPercentage(findPlayer(player.played[p].name, ps, true));
     }
     
     if (resistanceTotal == 0) resistanceTotal = NaN;
@@ -980,21 +1003,18 @@ function oppResistance (player, ps) {
     if (!isNaN(player.oppResistance)) return player.oppResistance;
     if (ps === undefined) ps = players;
     if (player == "bye" || player.name == "bye") return;
-
+    
     let oppResistanceTotal = 0, length = player.played.length;
     
     for (let p in player.played) {
         if (player.played[p].name == "bye")
             length--;
         else {
-            console.log(player.played[p].name);
-            oppResistanceTotal += Number.parseFloat(resistance(findPlayer(player.played[p].name, ps), ps, true));
+            console.log(player.played[p]);
+            oppResistanceTotal += player.played[p].name;
+            Number.parseFloat(resistance(findPlayer(player.played[p].name, ps, true), ps, true));
         }
     }
-    
-    console.log("beep");
-    console.log(player);
-    
     player.oppResistance = Number.parseFloat(oppResistanceTotal / length).toFixed(2);
 
     return player.oppResistance;
@@ -1009,6 +1029,7 @@ let resistanceDisplay = player => Number.parseFloat(resistance(player)).toFixed(
 let addOne = (i) => i + 1;
 
 let players = [];
+let droppedPlayers = [];
 let pairings = [];
 let currentPairings = pairings;
 let pairingsHistory = [];
