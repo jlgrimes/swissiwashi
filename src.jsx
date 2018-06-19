@@ -287,7 +287,7 @@ function loadTournament(tournament) {
         console.log(tournament.pairingsHistory);
         ReactDOM.render(
             <div class="container">
-                <Standings name={tournament.name} date={tournament.date} players={tournament.players} pairingsHistory={tournament.pairings} rounds={tournament.rounds} />
+                <Standings name={tournament.name} date={tournament.date} players={tournament.players} pairingsHistory={tournament.pairings} rounds={tournament.rounds} mode="recalled"/>
             </div>,
             document.getElementById('root')        
             );
@@ -558,20 +558,15 @@ class Pairings extends React.Component {
         this.dropPlayer = this.dropPlayer.bind(this);
         this.updateTabs = this.updateTabs.bind(this);
         this.searchBarUpdate = this.searchBarUpdate.bind(this);
-        this.exportTournament = this.exportTournament.bind(this);
-        this.saveTournamentLocalStorage = this.saveTournamentLocalStorage.bind(this);
         this.autoWins = this.autoWins.bind(this);
     }
     
     componentDidMount() {
-         //M.AutoInit();
+         $('[data-toggle="tooltip"]').tooltip();
         //$(".tabs").tabs({swipeable: true});
         //$("#bye").parent().parent().addClass("active");
     }
-    
-    componentDidUpdate() {
-         //M.AutoInit();
-    }
+
     
     nextRound() {
         if (round == numRounds) {
@@ -670,12 +665,8 @@ class Pairings extends React.Component {
             return;
         for (let p in pairings) {    
             let first = pairings[p].first, second =  pairings[p].second;
-            first.wins++;
-            second.losses++;
-            
-            // Marks that each player has played one another
-             first.played.push({name: second.name, result: "win"});
-             second.played.push({name: first.name, result: "loss"});
+            assignWin(first, second);
+            assignLoss(second, first);
             matchesComplete++;
         }
         this.forceUpdate();
@@ -701,7 +692,7 @@ class Pairings extends React.Component {
                     
                 <button class="btn btn-secondary" data-toggle="modal" data-target="#drop-modal">Drop Player</button>
                     
-                <button class="btn btn-secondary" onClick={() => this.autoWins()}>Auto Wins</button>
+                <button class="btn btn-secondary" onClick={() => this.autoWins()} data-toggle="tooltip" data-placement="top" title="Experimental!">Auto Wins</button>
                     
                 <p></p>
                 
@@ -738,16 +729,7 @@ class Pairings extends React.Component {
             return (
             <div class="container">
                     
-                <Standings name={tournamentName} date={tournamentDate} players={players} pairingsHistory={pairingsHistory} rounds={rounds} />
-                    
-                <div class="btn-group">
-                    <button class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Save Tournament</button>
-                    
-                    <div class="dropdown-menu">
-                        <a class="dropdown-item" onClick={() => this.saveTournamentLocalStorage()}>Local Storage</a>
-                        <a class="dropdown-item" onClick={() => this.exportTournament()}>Download</a>
-                    </div>
-                </div>
+                <Standings name={tournamentName} date={tournamentDate} players={players} pairingsHistory={pairingsHistory} rounds={rounds} mode="initial" />
             </div>
         );
         }
@@ -762,7 +744,81 @@ class Pairings extends React.Component {
         
         //$(".pairing-item").each(() => {$(this).toggleClass("animated bounce")});
     }
+    render() {   
+        return (
+            this.renderRounds()
+        );
+    }
+}
+
+class Standings extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {name: props.name, date: props.date, players: props.players, pairingsHistory: props.pairingsHistory, rounds: props.rounds, mode: props.mode};
+        
+        this.renderTabBar = this.renderTabBar.bind(this);
+        this.renderOptionalButtons = this.renderOptionalButtons.bind(this);
+        this.renderUnclickablePlayers = this.renderUnclickablePlayers.bind(this);
+        this.newTournament = this.newTournament.bind(this);
+        this.exportTournament = this.exportTournament.bind(this);
+        this.saveTournamentLocalStorage = this.saveTournamentLocalStorage.bind(this);
+    }
     
+    componentDidMount() {
+        $('.collapse').collapse()
+    }
+    
+    renderTabBar() {
+        return (
+                <ul class="nav nav-pills mb-3" role="tablist">
+                      {this.state.rounds.map(r => <li class="nav-item">
+                                            <a class="nav-link" data-toggle="tab" href={"#round-" + r} role="tab">
+                                                {renderTab(r)}
+                                            </a>
+                                        </li>)}
+                </ul>
+        );
+    }
+    
+    renderOptionalButtons() {
+        if (this.state.mode == "initial") {
+            return (
+                                                <div class="btn-group">
+                    <button class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Save Tournament</button>
+                    
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" onClick={() => this.saveTournamentLocalStorage()}>Local Storage</a>
+                        <a class="dropdown-item" onClick={() => this.exportTournament()}>Download</a>
+                    </div>
+                </div>
+            );
+        }
+    }
+    
+    renderUnclickablePlayers() { return(<div class="tab-content">{this.state.pairingsHistory.map((curr, currPos) =>
+                <div id={"round-" + addOne(currPos)} class="list-group tab-pane fade">{curr.map((p, i) => 
+                    <div class="list-group-item">
+                    <div class="row">
+                        {displayPlayer(p.first)}
+                        <div class="col center-align"> vs </div>
+                        {displayPlayer(p.second)}
+                    </div>
+                   </div>
+                )}</div>)}</div>)};
+    
+    newTournament() {
+        players = [];
+        pairingsHistory = [];
+        rounds = [];
+        matchesErrorState = false;
+        
+        ReactDOM.render(
+            <Initialize />,
+            document.getElementById('root')
+        );
+    }
+    
+        
     exportTournament() {
         let tournament = {
             name: tournamentName,
@@ -805,62 +861,7 @@ class Pairings extends React.Component {
         
         toastr.success(tournament_name + " saved!");
     }
-    
-    render() {   
-        return (
-            this.renderRounds()
-        );
-    }
-}
 
-class Standings extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = {name: props.name, date: props.date, players: props.players, pairingsHistory: props.pairingsHistory, rounds: props.rounds};
-        
-        this.renderTabBar = this.renderTabBar.bind(this);
-        this.renderUnclickablePlayers = this.renderUnclickablePlayers.bind(this);
-        this.newTournament = this.newTournament.bind(this);
-    }
-    
-    componentDidMount() {
-        $('.collapse').collapse()
-    }
-    
-    renderTabBar() {
-        return (
-                <ul class="nav nav-pills mb-3" role="tablist">
-                      {this.state.rounds.map(r => <li class="nav-item">
-                                            <a class="nav-link" data-toggle="tab" href={"#round-" + r} role="tab">
-                                                {renderTab(r)}
-                                            </a>
-                                        </li>)}
-                </ul>
-        );
-    }
-    
-    renderUnclickablePlayers() { return(<div class="tab-content">{this.state.pairingsHistory.map((curr, currPos) =>
-                <div id={"round-" + addOne(currPos)} class="list-group tab-pane fade">{curr.map((p, i) => 
-                    <div class="list-group-item">
-                    <div class="row">
-                        {displayPlayer(p.first)}
-                        <div class="col center-align"> vs </div>
-                        {displayPlayer(p.second)}
-                    </div>
-                   </div>
-                )}</div>)}</div>)};
-    
-    newTournament() {
-        players = [];
-        pairingsHistory = [];
-        rounds = [];
-        matchesErrorState = false;
-        
-        ReactDOM.render(
-            <Initialize />,
-            document.getElementById('root')
-        );
-    }
     
     render() {
         return (
@@ -870,6 +871,11 @@ class Standings extends React.Component {
                 {this.renderTabBar()}
                 {this.renderUnclickablePlayers()}
                 <p>Click on each player to view their matchups</p>
+                
+                <button class="btn btn-primary" onClick={() => this.newTournament()}>New Tournament</button>
+                
+                {this.renderOptionalButtons()}
+                
                 <div id="accordion">
                     {this.state.players.map((p, i) => <div class="card"> 
                                      <div class="card-header" id={p.name}>
@@ -890,8 +896,6 @@ class Standings extends React.Component {
                                      </div>
                                  </div>)}
                 </div>
-                
-                <button class="btn btn-primary" onClick={() => this.newTournament()}>New Tournament</button>
             </div>
         );
     }
@@ -1011,8 +1015,7 @@ function oppResistance (player, ps) {
             length--;
         else {
             console.log(player.played[p]);
-            oppResistanceTotal += player.played[p].name;
-            Number.parseFloat(resistance(findPlayer(player.played[p].name, ps, true), ps, true));
+            oppResistanceTotal += Number.parseFloat(resistance(findPlayer(player.played[p].name, ps, true), ps, true));
         }
     }
     player.oppResistance = Number.parseFloat(oppResistanceTotal / length).toFixed(2);

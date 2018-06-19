@@ -143,6 +143,12 @@ let tournament = {
 
 You can either export your tournament into your browser's local storage (similar to cookies/cache), or download it as a json file for offline storage. Any tournaments saved offline can be uploaded at any time for viewing the final standings page (includes standings, matches played for individual players, and round progression).
 
+## Final Standings
+
+Final standings have two user interfaces that load dependent on where the user is coming from. The only difference between the two is that the Save Tournament button is not displayed when recalling a saved tournament.
+
+The two modes are named "initial" and "recalled" respectively.
+
 ## Known Issues
 
 None at the moment
