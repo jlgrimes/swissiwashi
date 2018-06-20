@@ -149,6 +149,27 @@ Final standings have two user interfaces that load dependent on where the user i
 
 The two modes are named "initial" and "recalled" respectively.
 
+## Batch Pairings Functions
+
+### Auto Wins
+
+Assigns the player the left the win for all pairings
+
+### Smart Wins
+
+Same as auto wins, except factors in IDs to cut. The numbers I use for the program are as follows:
+
+Number of Rounds | Match Points Needed to ID into Cut
+-----------------|----------------------------
+3 | 6
+4 | 9
+5 | 9
+6 | 12
+7 | 15
+8 | 18
+9 | 21
+10 | 24
+
 ## Known Issues
 
 None at the moment

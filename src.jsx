@@ -25,6 +25,8 @@ class Initialize extends React.Component {
         //arr.pop();
         console.log(arr);
         console.log(spliced);
+        
+        this.state.presetNum = 10;
     }
     
     handleNameChange(event) {
@@ -212,36 +214,47 @@ class Initialize extends React.Component {
                 </div>
             </div>
                 
+                <br />
+                
                 <div class="row">
-                    <div class="md-form input-group col 6">
-                            <input type="text" class="form-control" placeholder="Tournament name" id="tournament-name" />
+                        <div class="col s6 input-box">
+                            <p class="row">Tournament Name</p>
+                            <div class="md-form input-group row">
+                                <input type="text" class="form-control top-row" placeholder="My Tournament" id="tournament-name" />
+                            </div>
                         </div>
-
-                        <div class="md-form input-group col">
-                            <input type="number" value={numRounds} placeholder="Number of Rounds" class="form-control" id="number-rounds" onChange={this.handleRoundChange} />
-
-                            <div class="input-group-append">
-                                <span class="input-group-text" id="basic-addon2">Rounds</span>
-                              </div>
+                        
+                        <div class="col s6 input-box">
+                            <p class="row">Number of Rounds</p>
+                            <div class="md-form input-group row">
+                                <input type="number" value={numRounds} placeholder="Number of Rounds" class="form-control top-row" id="number-rounds" onChange={this.handleRoundChange} />
+                            </div>
                         </div>
                 </div>
                 
-                <div class="row">
-                    
-                    <div class="md-form input-group col s6">
-                        <input type="text" class="form-control" placeholder="Player name" id="player-input" onChange={this.handleNameChange} onKeyPress={(e) => this.handleKeyPress(e)} />
-                      <div class="input-group-append">
-                          <button class="btn btn-primary px-3" type="button" onClick={() => this.addPlayer()}><i class="fa fa-user-plus" aria-hidden="true"></i></button>
-                      </div>
+                <div class="row">      
+                    <div class="col s6 input-box">
+                        <p class="row">Add Player</p>
+                        <div class="md-form input-group row">
+                            <input type="text" class="form-control" placeholder="Name" id="player-input" onChange={this.handleNameChange} onKeyPress={(e) => this.handleKeyPress(e)} />
+                          <div class="input-group-append">
+                              <button class="btn btn-primary px-3" type="button" onClick={() => this.addPlayer()}><i class="fa fa-user-plus" aria-hidden="true"></i></button>
+                          </div>
+                        </div>
                     </div>
                     
-                    <div class="md-form input-group col s6">
-                        <input type="number" class="form-control" placeholder="Number of default players" id="player-input" onChange={this.handlePresetChange} onKeyPress={(e) => this.handleKeyPressPreset(e)}/>
-                      <div class="input-group-append">
-                          <button class="btn btn-secondary waves-effect px-3" type="button" onClick={() => this.loadPreset()}><i class="fa fa-download" aria-hidden="true"></i></button>
-                      </div>
+                    <div class="col s6 input-box">
+                        <p class="row">Load Preset Players</p>
+                        <div class="md-form input-group row">
+                            <input type="number" class="form-control" value={10} id="player-input" onChange={this.handlePresetChange} onKeyPress={(e) => this.handleKeyPressPreset(e)}/>
+                          <div class="input-group-append">
+                              <button class="btn btn-secondary waves-effect px-3" type="button" onClick={() => this.loadPreset()}><i class="fa fa-download" aria-hidden="true"></i></button>
+                          </div>
+                        </div>
                     </div>
                 </div>
+                
+
                 
                 <button onClick={() => this.startTournament()} class="btn btn-primary"><i class="fa fa-rocket pr-2" aria-hidden="true"></i>Start Tournament</button>
                 
@@ -578,6 +591,8 @@ class Pairings extends React.Component {
         this.updateTabs = this.updateTabs.bind(this);
         this.searchBarUpdate = this.searchBarUpdate.bind(this);
         this.autoWins = this.autoWins.bind(this);
+        this.smartWins = this.smartWins.bind(this);
+        this.uncompleteAllPairings = this.uncompleteAllPairings.bind(this);
     }
     
     componentDidMount() {
@@ -680,14 +695,45 @@ class Pairings extends React.Component {
     }
     
     autoWins() {
-        if (matchesComplete == pairings / 2)
-            return;
+        this.uncompleteAllPairings();
+        
         for (let p in pairings) {    
             let first = pairings[p].first, second =  pairings[p].second;
             assignWin(first, second);
             assignLoss(second, first);
+            completePairing(first.name);
+            
             matchesComplete++;
         }
+        this.forceUpdate();
+    }
+    
+    smartWins() {
+        this.uncompleteAllPairings();
+        
+        for (let p in pairings) {    
+            let first = pairings[p].first, second =  pairings[p].second;
+            
+            if (IDtoCut(first) && IDtoCut(second)) {
+                assignTie(first, second);
+                assignTie(second, first);
+            }
+            else {
+                assignWin(first, second);
+                assignLoss(second, first);
+            }
+            
+            completePairing(first.name);
+            matchesComplete++;
+        }
+        this.forceUpdate();
+    }
+    
+    uncompleteAllPairings() {
+        for (let p in pairings)
+            if (pairings[p].complete)
+                uncompletePairing(pairings[p].first.name);
+        
         this.forceUpdate();
     }
     
@@ -712,6 +758,10 @@ class Pairings extends React.Component {
                 <button class="btn btn-secondary" data-toggle="modal" data-target="#drop-modal"><i class="fa fa-user-times pr-2" aria-hidden="true"></i>Drop Player</button>
                     
                 <button class="btn btn-secondary" onClick={() => this.autoWins()} data-toggle="tooltip" data-placement="top" title="Experimental!"><i class="fa fa-gears pr-2" aria-hidden="true"></i>Auto Wins</button>
+                    
+                <button class="btn btn-secondary" onClick={() => this.smartWins()} data-toggle="tooltip" data-placement="top" title="Experimental!"><i class="fa fa-gears pr-2" aria-hidden="true"></i>Smart Wins</button>
+                    
+                <button class="btn btn-secondary" onClick={() => this.uncompleteAllPairings()} data-toggle="tooltip" data-placement="top" title="Experimental!"><i class="fa fa-gears pr-2" aria-hidden="true"></i>Uncomplete All Pairings</button>
                     
                 <p></p>
                 
@@ -1048,19 +1098,21 @@ let resistanceDisplay = player => Number.parseFloat(resistance(player)).toFixed(
 // end of potentially useless functions
 
 
-let addOne = (i) => i + 1;
+let addOne = (i) => i + 1;      // Because JSX is dumb
 
-let players = [];
-let droppedPlayers = [];
-let pairings = [];
-let currentPairings = pairings;
-let pairingsHistory = [];
-let rounds = [];
-let round;
-let numRounds;
-let searchQuery;
-let tournamentName;
-let tournamentDate;
+let players = [];               // List of all players. Can be sorted
+let droppedPlayers = [];        // Holds players that were dropped
+let topCutPlayers = [];         // Players who have made top cut
+let pairings = [];              // Pairings for current round
+let currentPairings = pairings; // Used for viewing pairings at the end
+let pairingsHistory = [];       // Stores all pairings
+let rounds = [];                // [Round 1, Round 2,...]
+let round;                      // Current round number
+let numRounds;                  // Total number of rounds specified at start
+let searchQuery;                // What's currently in the player search bar
+let tournamentName;             // Name of tournament
+let tournamentDate;             // Date of tournament
+let matchesErrorState;          // lol idk..?
 
 function recommendedRounds() {
     let n = players.length;
@@ -1083,7 +1135,21 @@ function recommendedRounds() {
     //return Math.log(1 << 31 - Math.clz32(n)) / Math.log(2) + off;
 }
 
-let matchesErrorState;
+function IDtoCut(player) {
+    let mp = matchPoints(player);
+    let pointsByID = numRounds - round;
+    
+    if (numRounds == 3 && mp + pointsByID >= 6) return true;
+    if (numRounds == 4 && mp + pointsByID >= 9) return true;
+    if (numRounds == 5 && mp + pointsByID >= 9) return true;
+    if (numRounds == 6 && mp + pointsByID >= 12) return true;
+    if (numRounds == 7 && mp + pointsByID >= 15) return true;
+    if (numRounds == 8 && mp + pointsByID >= 18) return true;
+    if (numRounds == 9 && mp + pointsByID >= 21) return true;
+    if (numRounds == 10 && mp + pointsByID >= 24) return true;
+    
+    return false;
+}
 
 function range (lowerBound, upperBound) {
     let arr = [];
