@@ -25,8 +25,6 @@ class Initialize extends React.Component {
         //arr.pop();
         console.log(arr);
         console.log(spliced);
-        
-        this.state.presetNum = 10;
     }
     
     handleNameChange(event) {
@@ -136,12 +134,14 @@ class Initialize extends React.Component {
             loadTournament(tournament);
         }
         reader.readAsText(file);
+        $(".modal-backdrop").remove();
     }
     
     loadLocalTournament(e) {
         let name = e.target.innerHTML.split(" <i")[0];
         //console.log(name);
         loadTournament(JSON.parse(localStorage.getItem(name)));
+        $(".modal-backdrop").remove();
     }
     
     startTournament() {
@@ -217,43 +217,40 @@ class Initialize extends React.Component {
                 <br />
                 
                 <div class="row">
-                        <div class="col s6 input-box">
-                            <p class="row">Tournament Name</p>
-                            <div class="md-form input-group row">
-                                <input type="text" class="form-control top-row" placeholder="My Tournament" id="tournament-name" />
+                        <div class="col-md-8">
+                            <div class="md-form">
+                                <input type="text" class="form-control" id="tournament-name" />
+                                <label for="tournament-name">Tournament name</label>
                             </div>
                         </div>
                         
-                        <div class="col s6 input-box">
-                            <p class="row">Number of Rounds</p>
-                            <div class="md-form input-group row">
-                                <input type="number" value={numRounds} placeholder="Number of Rounds" class="form-control top-row" id="number-rounds" onChange={this.handleRoundChange} />
+                        <div class="col-md-4">
+                            <div class="md-form">
+                                <label for="number-rounds">Number of rounds</label>
+                                <input type="number" value={numRounds} class="form-control top-row" id="number-rounds" onChange={this.handleRoundChange}></input>
                             </div>
                         </div>
                 </div>
                 
-                <div class="row">      
-                    <div class="col s6 input-box">
-                        <p class="row">Add Player</p>
-                        <div class="md-form input-group row">
-                            <input type="text" class="form-control" placeholder="Name" id="player-input" onChange={this.handleNameChange} onKeyPress={(e) => this.handleKeyPress(e)} />
+               <div class="row">      
+                    <div class="col-md-8">
+                        <div class="md-form input-group">
+                            <input type="text" class="form-control" placeholder="Add player" id="player-input" onChange={this.handleNameChange} onKeyPress={(e) => this.handleKeyPress(e)} />
                           <div class="input-group-append">
                               <button class="btn btn-primary px-3" type="button" onClick={() => this.addPlayer()}><i class="fa fa-user-plus" aria-hidden="true"></i></button>
                           </div>
                         </div>
                     </div>
                     
-                    <div class="col s6 input-box">
-                        <p class="row">Load Preset Players</p>
-                        <div class="md-form input-group row">
-                            <input type="number" class="form-control" value={10} id="player-input" onChange={this.handlePresetChange} onKeyPress={(e) => this.handleKeyPressPreset(e)}/>
+                    <div class="col-md-4">
+                        <div class="md-form input-group">
+                            <input type="number" class="form-control" id="player-input" placeholder="Load players" onChange={this.handlePresetChange} onKeyPress={(e) => this.handleKeyPressPreset(e)}/>
                           <div class="input-group-append">
                               <button class="btn btn-secondary waves-effect px-3" type="button" onClick={() => this.loadPreset()}><i class="fa fa-download" aria-hidden="true"></i></button>
                           </div>
                         </div>
                     </div>
                 </div>
-                
 
                 
                 <button onClick={() => this.startTournament()} class="btn btn-primary"><i class="fa fa-rocket pr-2" aria-hidden="true"></i>Start Tournament</button>
@@ -275,16 +272,24 @@ class Initialize extends React.Component {
                                 {this.displayLocalStorage()}
                                 
                                 <div class="md-form">
-                                    <input type="file" id="tournament-input" class="form-control" placeholder="Player name"></input>
+                                    <div class="file-field">
+                                        <div class="btn btn-primary btn-sm float-left">
+                                            <span>Choose file</span>
+                                            <input type="file" id="tournament-input"></input>
+                                        </div>
+                                        <div class="file-path-wrapper">
+                                            <input class="file-path validate" type="text" placeholder="Upload your file" />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-primary" onClick={() => this.loadUploadedTournament()}>Load</button>
+
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-primary" onClick={() => this.loadUploadedTournament()}>Load</button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
                 
                 
                 <button class="btn btn-danger" onClick={() => {$("#initialize").addClass("animated hinge")}}><i class="fa fa-close pr-2" aria-hidden="true"></i>Destroy this page</button>
@@ -292,9 +297,10 @@ class Initialize extends React.Component {
                 <h5 id="player-count">{displayPlayerCount()}</h5>
                 <p id="loading"></p>
                 
-                <div id="pairings" class="list-group">
-                    {players.map(p => <a class="list-group-item" onClick={(e) => this.deletePlayer(e)} id={p.name}>{p.name}</a>)}
+                <div id="pairings">
+                    {players.map(p => <div class="chip lighten-4" onClick={(e) => this.deletePlayer(e)} id={p.name}>{p.name}</div>)}
                 </div>
+                
                 
             </div>
         );
@@ -852,10 +858,10 @@ class Standings extends React.Component {
     renderOptionalButtons() {
         if (this.state.mode == "initial") {
             return (
-                                                <div class="btn-group">
+                                                <div class="dropdown">
                     <button class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-save pr-2" aria-hidden="true"></i>Save Tournament</button>
                     
-                    <div class="dropdown-menu">
+                    <div class="dropdown-menu dropdown-secondary">
                         <a class="dropdown-item" onClick={() => this.saveTournamentLocalStorage()}>Local Storage</a>
                         <a class="dropdown-item" onClick={() => this.exportTournament()}>Download</a>
                     </div>
@@ -944,17 +950,18 @@ class Standings extends React.Component {
                 <button class="btn btn-primary" onClick={() => this.newTournament()}><i class="fa fa-plus pr-2" aria-hidden="true"></i>New Tournament</button>
                 
                 {this.renderOptionalButtons()}
-                
-                <div id="accordion">
-                    {this.state.players.map((p, i) => <div class="card"> 
-                                     <div class="card-header" id={p.name}>
-                                         <button class="btn btn-link" data-toggle="collapse" data-target={"#" + p.name + "-body"} aria-expanded="true" aria-controls={"#" + p.name + "-body"}>
+
+                <div class="accordion" id="accordion" role="tablist" aria-multiselectable="true">
+                    {this.state.players.map((p, i) => 
+                                <div class="card"> 
+                                     <div class="card-header" role="tab" id={p.name}>
+                                         <a data-toggle="collapse" data-parent="#accordion" href={"#" + p.name + "-body"} aria-expanded="false" aria-controls={p.name + "-body"}>
                                           {addOne(i) + ". "}
                                              <DisplayPlayer player={p} players={this.state.players} />
-                                        </button>
+                                        </a>
                                     </div>
                                      
-                                     <div id={p.name + "-body"} class="collapse show" aria-labelledby={"#" + p.name} data-parent="#accordion">
+                                     <div id={p.name + "-body"} class="collapse show" role="tabpanel" aria-labelledby={p.name} data-parent="#accordion">
                                          <div class="card-body">
                                              <ul class="list-group">
                                             {p.played.map((q, j) =>
@@ -1116,6 +1123,7 @@ let matchesErrorState;          // lol idk..?
 
 function recommendedRounds() {
     let n = players.length;
+    if (n == 0) return;
     if (n <= 2) return 1;
     if (n <= 7) return 2;
     if (n == 8) return 3;
