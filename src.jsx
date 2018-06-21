@@ -5,6 +5,7 @@ class Initialize extends React.Component {
         this.handleNameChange = this.handleNameChange.bind(this);
         this.handleRoundChange = this.handleRoundChange.bind(this);
         this.handlePresetChange = this.handlePresetChange.bind(this);
+        this.handleDateChange = this.handleDateChange.bind(this);
         this.startTournament = this.startTournament.bind(this);
         this.loadPreset = this.loadPreset.bind(this);
         this.loadUploadedTournament = this.loadUploadedTournament.bind(this); this.loadLocalTournament = this.loadLocalTournament.bind(this);
@@ -25,6 +26,8 @@ class Initialize extends React.Component {
         //arr.pop();
         console.log(arr);
         console.log(spliced);
+        
+        this.state.dateFilter = "";
     }
     
     handleNameChange(event) {
@@ -38,6 +41,10 @@ class Initialize extends React.Component {
     
     handlePresetChange(event) {
         this.setState({presetNum: event.target.value});
+    }
+    
+    handleDateChange() {
+        this.setState({dateFilter: $(".datepicker").val()});
     }
     
     handleKeyPress(target) {
@@ -88,8 +95,18 @@ class Initialize extends React.Component {
             toastr.success(name + " added!");
         numRounds = recommendedRounds();
         
-        numRounds = recommendedRounds();
         this.forceUpdate();
+    }
+    
+    componentDidMount() {
+        $('.mdb-select').material_select();
+        $('.datepicker').pickadate({
+          // Escape any “rule” characters with an exclamation mark (!).
+          format: 'mm dd yyyy',
+          formatSubmit: 'yyyy/mm/dd',
+          hiddenPrefix: 'prefix__',
+          hiddenSuffix: '__suffix'
+        })
     }
     
     deletePlayer(e) {
@@ -155,6 +172,9 @@ class Initialize extends React.Component {
             return;
         }
         
+        tournamentType = $("#tournament-type").val();
+        tournamentState = "Swiss";
+        
         shuffle(players);
         
         tournamentName = $("#tournament-name").val();
@@ -178,12 +198,22 @@ class Initialize extends React.Component {
     
     displayLocalStorage() {
         let names = [];
-        
         for (let key in localStorage) {
             if (key == "length")
                 break;
-            names.push(key);
+            
+            let str = key.split(" ").join("-");
+            //alert(str);
+            if (this.state.dateFilter[0] == "0") {
+                this.setState({dateFilter: this.state.dateFilter.slice(1, str.length - 1)});
+            }
+            
+            if (str.includes(this.state.dateFilter.split(" ").join("-")) || this.state.dateFilter == "")
+                names.push(key);
         }
+        
+        if (names.length == 0)
+            return "No tournaments saved locally :(";
 
         return (
             <div class="list-group">
@@ -217,20 +247,32 @@ class Initialize extends React.Component {
                 <br />
                 
                 <div class="row">
-                        <div class="col-md-8">
+                        <div class="col-md-6">
                             <div class="md-form">
                                 <input type="text" class="form-control" id="tournament-name" />
                                 <label for="tournament-name">Tournament name</label>
                             </div>
                         </div>
                         
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="md-form">
                                 <label for="number-rounds">Number of rounds</label>
                                 <input type="number" value={numRounds} class="form-control top-row" id="number-rounds" onChange={this.handleRoundChange}></input>
                             </div>
                         </div>
+                    
+                        <div class="col md-3">
+                            <label class="tournament-label">Tournament Type</label>
+                            <select class="mdb-select colorful-select dropdown-primary" id="tournament-type">
+                                <option value="one-day">Regular Swiss</option>
+                                <option value="two-day">Two Day Swiss</option>
+                                <option value="bo8">Swiss + Top 8</option>
+                                <option value="bo4">Swiss + Top 4</option>
+                            </select>
+                        </div>
                 </div>
+                
+                
                 
                <div class="row">      
                     <div class="col-md-8">
@@ -258,7 +300,7 @@ class Initialize extends React.Component {
                 <div class="btn btn-secondary" data-toggle="modal" data-target="#load-modal"><i class="fa fa-folder-open pr-2" aria-hidden="true"></i>Load Tournament</div>
                 
                 <div class="modal fade" id="load-modal" tabindex="-1" role="dialog" aria-labelledby="load-modal-label" aria-hidden="true">
-                    <div class="modal-dialog" role="document">
+                    <div class="modal-dialog modal-lg" role="document">
                         <div class="modal-content">
                             <div class="modal-header">
                                 <h5 class="modal-title" id="load-modal-label">Load Tournament</h5>
@@ -268,6 +310,13 @@ class Initialize extends React.Component {
                             </div>
                             <div class="modal-body">
                                 <p>Please choose a locally saved tournament, or upload a compatible json file.</p>
+                                
+                                <div class="md-form date-pick">
+                                    <input placeholder="Selected date" onChange={() => this.handleDateChange()} type="text" id="date-picker-example" class="form-control datepicker" />
+                                    <label for="date-picker-example">Filter by Date</label>
+                                </div>
+                                
+                                <button class="btn btn-primary" onClick={() => this.handleDateChange()}>Search</button>
                                 
                                 {this.displayLocalStorage()}
                                 
@@ -305,6 +354,10 @@ class Initialize extends React.Component {
             </div>
         );
     }
+}
+
+function convertDate(date) {
+    
 }
 
 function loadTournament(tournament) {
@@ -603,6 +656,7 @@ class Pairings extends React.Component {
     
     componentDidMount() {
          $('[data-toggle="tooltip"]').tooltip();
+        $('[data-toggle="popover"]').popover();
         //$(".tabs").tabs({swipeable: true});
         //$("#bye").parent().parent().addClass("active");
     }
@@ -703,13 +757,15 @@ class Pairings extends React.Component {
     autoWins() {
         this.uncompleteAllPairings();
         
-        for (let p in pairings) {    
-            let first = pairings[p].first, second =  pairings[p].second;
-            assignWin(first, second);
-            assignLoss(second, first);
-            completePairing(first.name);
-            
-            matchesComplete++;
+        for (let p in pairings) { 
+            if (pairings[p].second != "bye") {
+                let first = pairings[p].first, second =  pairings[p].second;
+                assignWin(first, second);
+                assignLoss(second, first);
+                completePairing(first.name);
+
+                matchesComplete++;
+            }
         }
         this.forceUpdate();
     }
@@ -717,27 +773,29 @@ class Pairings extends React.Component {
     smartWins() {
         this.uncompleteAllPairings();
         
-        for (let p in pairings) {    
-            let first = pairings[p].first, second =  pairings[p].second;
-            
-            if (IDtoCut(first) && IDtoCut(second)) {
-                assignTie(first, second);
-                assignTie(second, first);
+        for (let p in pairings) { 
+            if (pairings[p].second != "bye") {
+                let first = pairings[p].first, second =  pairings[p].second;
+
+                if (IDtoCut(first) && IDtoCut(second)) {
+                    assignTie(first, second);
+                    assignTie(second, first);
+                }
+                else {
+                    assignWin(first, second);
+                    assignLoss(second, first);
+                }
+
+                completePairing(first.name);
+                matchesComplete++;
             }
-            else {
-                assignWin(first, second);
-                assignLoss(second, first);
-            }
-            
-            completePairing(first.name);
-            matchesComplete++;
         }
         this.forceUpdate();
     }
     
     uncompleteAllPairings() {
         for (let p in pairings)
-            if (pairings[p].complete)
+            if (pairings[p].second != "bye" && pairings[p].complete)
                 uncompletePairing(pairings[p].first.name);
         
         this.forceUpdate();
@@ -746,14 +804,12 @@ class Pairings extends React.Component {
     renderRounds() {
         if (round != "DONE" && round <= numRounds) {
             return(<div class="container">
-                <h1 id="tournament-name-display">{tournamentName}</h1>
-                <h2 id="round-number">Round {round} of {numRounds}</h2>
-                <p>Click on a player to assign the win, click on vs to assign both players the tie, and click on an already completed match to undo.</p>
-                
-                <div class="md-form">
-                    <i class="fa fa-search prefix"></i>
-                    <input type="text" class="form-control" placeholder="Search for a player" onChange={(e) => this.searchBarUpdate(e)}></input>
+                <div class="row">
+                    <h1 class="col-auto" id="tournament-name-display">{tournamentName}</h1>
+                    <h4 class="col-auto">{tournamentDate} - {convertTournamentType()} - {tournamentState}</h4>
                 </div>
+                    
+                <h2 id="round-number">Round {round} of {numRounds}</h2>
 
                     <button class="btn btn-primary" onClick={() => this.nextRound()}><i class="fa fa-step-forward pr-2" aria-hidden="true"></i>Next Round</button>
                     
@@ -763,13 +819,18 @@ class Pairings extends React.Component {
                     
                 <button class="btn btn-secondary" data-toggle="modal" data-target="#drop-modal"><i class="fa fa-user-times pr-2" aria-hidden="true"></i>Drop Player</button>
                     
-                <button class="btn btn-secondary" onClick={() => this.autoWins()} data-toggle="tooltip" data-placement="top" title="Experimental!"><i class="fa fa-gears pr-2" aria-hidden="true"></i>Auto Wins</button>
+                <button class="btn btn-secondary" onClick={() => this.autoWins()}><i class="fa fa-gears pr-2" aria-hidden="true"></i>Auto Wins</button>
                     
-                <button class="btn btn-secondary" onClick={() => this.smartWins()} data-toggle="tooltip" data-placement="top" title="Experimental!"><i class="fa fa-gears pr-2" aria-hidden="true"></i>Smart Wins</button>
+                <button class="btn btn-secondary" onClick={() => this.smartWins()}><i class="fa fa-gears pr-2" aria-hidden="true"></i>Smart Wins</button>
                     
-                <button class="btn btn-secondary" onClick={() => this.uncompleteAllPairings()} data-toggle="tooltip" data-placement="top" title="Experimental!"><i class="fa fa-gears pr-2" aria-hidden="true"></i>Uncomplete All Pairings</button>
+                <button class="btn btn-secondary" onClick={() => this.uncompleteAllPairings()}><i class="fa fa-gears pr-2" aria-hidden="true"></i>Uncomplete All Pairings</button>
                     
-                <p></p>
+                <button class="btn btn-info" data-toggle="popover" data-placement="bottom" data-title="How to use" data-content="Click on a player to assign the win, click on vs to assign both players the tie, and click on an already completed match to undo."><i class="fa fa-question pr-2" aria-hidden="true"></i>Help</button>
+                    
+                <div class="md-form">
+                    <i class="fa fa-search prefix"></i>
+                    <input type="text" class="form-control" placeholder="Search for a player" onChange={(e) => this.searchBarUpdate(e)}></input>
+                </div>
                 
                 <GeneratePairings round={0} />
                     
@@ -796,7 +857,6 @@ class Pairings extends React.Component {
                         </div>
                     </div>
                 </div>
-                    
             </div>);
                               }
         else {
@@ -1118,8 +1178,18 @@ let round;                      // Current round number
 let numRounds;                  // Total number of rounds specified at start
 let searchQuery;                // What's currently in the player search bar
 let tournamentName;             // Name of tournament
+let tournamentState;
 let tournamentDate;             // Date of tournament
+let tournamentType;             // How many rounds it is, etc
 let matchesErrorState;          // lol idk..?
+
+function convertTournamentType() {
+    let t = tournamentType;
+    if (t == "one-day") return "Regular Swiss";
+    if (t == "two-day") return "Two Day Swiss";
+    if (t == "bo8") return "Swiss + Top 8";
+    if (t == "bo4") return "Swiss + Top 4";
+}
 
 function recommendedRounds() {
     let n = players.length;

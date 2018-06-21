@@ -32,7 +32,7 @@ footer {
     beight: 100px;
 }
 
-ul {
+.lis-group {
     -moz-column-count: 4;
     -moz-column-gap: 20px;
     -webkit-column-count: 4;
@@ -70,4 +70,43 @@ ul {
 
 .logo {
     height: 75px
+}
+
+.col {
+    vertical-align: bottom;
+}
+
+.tournament-label {
+    margin-bottom: 0;
+}
+
+.modal-dialog,
+.modal-content {
+    /* 80% of window height */
+    height: 90%;
+}
+
+.switch.round label .lever {
+    width: 54px;
+    height: 34px;
+    border-radius: 10em;
+}
+.switch.round label .lever:after {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    left: 4px;
+    top: 4px;
+}
+.switch.square label .lever {
+    width: 54px;
+    height: 34px;
+    border-radius: 0px;
+}
+.switch.square label .lever:after {
+    width: 26px;
+    height: 26px;
+    border-radius: 0px;
+    left: 4px;
+    top: 4px;
 }
