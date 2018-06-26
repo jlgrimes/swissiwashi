@@ -603,11 +603,12 @@ class GeneratePairings extends React.Component {
     }
     
     handleUncomplete(e) {
-        //console.log(e.target.parentElement.parentElement);
+        //alert();
+        console.log(!e.target.parentElement.parentElement.classList.contains('list-group-item-primary'));
         if (!e.target.parentElement.parentElement.classList.contains('list-group-item-primary'))
             return;
         
-        let firstPlayer = e.target.parentElement.firstChild;
+        let firstPlayer = e.target.parentElement.firstChild.nextSibling;
         
         // If they click vs, we can't uncomplete a pairing with vs as the player, so we just grab the first child
         uncompletePairing(firstPlayer.id);
@@ -620,11 +621,14 @@ class GeneratePairings extends React.Component {
             return (
                 <div class="list-group">{currentPairings.filter(p => p.first.name.indexOf(searchQuery) >= 0 || (p.second != "bye" && p.second.name.indexOf(searchQuery) >= 0)).map((p, i) => 
                     <div class={"list-group-item pairing-item " + uh(p)} onClick={e => this.handleUncomplete(e)}>
-                                                                 <div class="row">
-                        {this.displayPlayer(p.first)}
-                        <div class="col-1 center-align vs" onClick={(e) => this.handleTie(e)}> vs </div>
-                        {this.displayPlayer(p.second)}
-                                                                 </div>
+                        <div class="row">
+                            <div class="col-1 center-align table-number">
+                                {addOne(i)}
+                            </div>
+                            {this.displayPlayer(p.first)}
+                            <div class="col-1 center-align vs" onClick={(e) => this.handleTie(e)}> vs </div>
+                            {this.displayPlayer(p.second)}
+                        </div>
                     </div>
                 )}</div>
             );
@@ -1117,8 +1121,8 @@ let resistance = (player, ps, ifDynamic, ifFloat) => {
     
     let resistanceTotal = 0;
     
-        console.log("yoo");
-    console.log(player);
+    //console.log("yoo");
+    //console.log(player);
     let length = player.played.length;
     for (let p in player.played) {
         if (player.played[p].name == "bye")
@@ -1324,7 +1328,7 @@ function findPlayedIndex(player, playedName) {
 
 function getPairedPlayerHTML(firstPlayer) {
     let nextPlayer;
-    if (firstPlayer.previousSibling == null)
+    if (firstPlayer.previousSibling.classList.contains("table-number"))
         nextPlayer = firstPlayer.nextSibling.nextSibling.id;
     else
         nextPlayer = firstPlayer.previousSibling.previousSibling.id;
