@@ -80,8 +80,8 @@ footer {
     margin-bottom: 0;
 }
 
-.modal-dialog,
-.modal-content {
+.load-modal-dialog,
+.load-modal-content {
     /* 80% of window height */
     height: 90%;
 }
@@ -109,4 +109,131 @@ footer {
     border-radius: 0px;
     left: 4px;
     top: 4px;
+}
+
+.switch.round label .lever {
+    width: 54px;
+    height: 34px;
+    border-radius: 10em;
+}
+.switch.round label .lever:after {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    left: 4px;
+    top: 4px;
+}
+.switch.square label .lever {
+    width: 54px;
+    height: 34px;
+    border-radius: 0px;
+}
+.switch.square label .lever:after {
+    width: 26px;
+    height: 26px;
+    border-radius: 0px;
+    left: 4px;
+    top: 4px;
+}
+
+.switch.primary-switch label input[type=checkbox]:checked + .lever {
+    background-color: #689DF6;
+}
+.switch.primary-switch label input[type=checkbox]:checked + .lever:after {
+    background-color: #4285F4;
+}
+.switch.default-switch label input[type=checkbox]:checked + .lever {
+    background-color: #4DCCBF;
+}
+.switch.default-switch label input[type=checkbox]:checked + .lever:after {
+    background-color: #2BBBAD;
+}
+.switch.secondary-switch label input[type=checkbox]:checked + .lever {
+    background-color: #C791E2;
+}
+.switch.secondary-switch label input[type=checkbox]:checked + .lever:after {
+    background-color: #a6c;
+}
+.switch.success-switch label input[type=checkbox]:checked + .lever {
+    background-color: #2ACC6C;
+}
+.switch.success-switch label input[type=checkbox]:checked + .lever:after {
+    background-color: #00C851;
+}
+.switch.info-switch label input[type=checkbox]:checked + .lever {
+    background-color: #59C3EB;
+}
+.switch.info-switch label input[type=checkbox]:checked + .lever:after {
+    background-color: #33b5e5;
+}
+.switch.warning-switch label input[type=checkbox]:checked + .lever {
+    background-color: #FFA339;
+}
+.switch.warning-switch label input[type=checkbox]:checked + .lever:after {
+    background-color: #F80;
+}
+.switch.danger-switch label input[type=checkbox]:checked + .lever {
+    background-color: #FF606F;
+}
+.switch.danger-switch label input[type=checkbox]:checked + .lever:after {
+    background-color: #ff3547;
+}
+.switch.teal-switch label input[type=checkbox]:checked + .lever {
+    background-color: #b2dfdb;
+}
+.switch.teal-switch label input[type=checkbox]:checked + .lever:after {
+    background-color: #80cbc4;
+}
+.switch.pink-switch label input[type=checkbox]:checked + .lever {
+    background-color: #f8bbd0;
+}
+.switch.pink-switch label input[type=checkbox]:checked + .lever:after {
+    background-color: #f48fb1;
+}
+.switch.blue-switch label input[type=checkbox]:checked + .lever {
+    background-color: #b3e5fc;
+}
+.switch.blue-switch label input[type=checkbox]:checked + .lever:after {
+    background-color: #81d4fa;
+}
+.switch.amber-switch label input[type=checkbox]:checked + .lever {
+    background-color: #ffe082;
+}
+.switch.amber-switch label input[type=checkbox]:checked + .lever:after {
+    background-color: #ffd54f;
+}
+.switch.mdb-color-switch label input[type=checkbox]:checked + .lever {
+    background-color: #618FB5;
+}
+.switch.mdb-color-switch label input[type=checkbox]:checked + .lever:after {
+    background-color: #3F729B;
+}
+.switch.indigo-switch label input[type=checkbox]:checked + .lever {
+    background-color: #9fa8da;
+}
+.switch.indigo-switch label input[type=checkbox]:checked + .lever:after {
+    background-color: #7986cb;
+}
+.switch.blue-white-switch label input[type=checkbox]:checked + .lever {
+    background-color: #2196f3;
+}
+.switch.blue-white-switch label input[type=checkbox]:checked + .lever:after {
+    background-color: #fff;
+}
+.switch.blue-white-switch label .lever  {
+    background-color: #ccc;
+}
+.switch.blue-white-switch label .lever:after {
+    background-color: #fff;
+}
+
+.switch-label {
+    padding-top: 15px;
+    padding-left: 15px;
+    margin-bottom: -5px;
+}
+
+.switch-side-label {
+    padding-top: 35px;
+    margin-left: -20px;
 }

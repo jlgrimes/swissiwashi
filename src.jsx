@@ -107,6 +107,9 @@ class Initialize extends React.Component {
           hiddenPrefix: 'prefix__',
           hiddenSuffix: '__suffix'
         })
+        
+        $('[data-toggle="tooltip"]').tooltip();
+        $('[data-toggle="popover"]').popover();
     }
     
     deletePlayer(e) {
@@ -300,8 +303,8 @@ class Initialize extends React.Component {
                 <div class="btn btn-secondary" data-toggle="modal" data-target="#load-modal"><i class="fa fa-folder-open pr-2" aria-hidden="true"></i>Load Tournament</div>
                 
                 <div class="modal fade" id="load-modal" tabindex="-1" role="dialog" aria-labelledby="load-modal-label" aria-hidden="true">
-                    <div class="modal-dialog modal-lg" role="document">
-                        <div class="modal-content">
+                    <div class="modal-dialog load-modal-dialog modal-lg" role="document">
+                        <div class="modal-content load-modal-content">
                             <div class="modal-header">
                                 <h5 class="modal-title" id="load-modal-label">Load Tournament</h5>
                                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -338,8 +341,7 @@ class Initialize extends React.Component {
                                 </div>
                             </div>
                         </div>
-                    </div>
-                
+                    </div>                
                 
                 <button class="btn btn-danger" onClick={() => {$("#initialize").addClass("animated hinge")}}><i class="fa fa-close pr-2" aria-hidden="true"></i>Destroy this page</button>
                 
@@ -650,12 +652,16 @@ class Pairings extends React.Component {
         this.repair = this.repair.bind(this);
         this.endTournament = this.endTournament.bind(this);
         this.renderRounds = this.renderRounds.bind(this);
+        this.renderBatchFunctions = this.renderBatchFunctions.bind(this);
         this.dropPlayer = this.dropPlayer.bind(this);
         this.updateTabs = this.updateTabs.bind(this);
         this.searchBarUpdate = this.searchBarUpdate.bind(this);
         this.autoWins = this.autoWins.bind(this);
         this.smartWins = this.smartWins.bind(this);
         this.uncompleteAllPairings = this.uncompleteAllPairings.bind(this);
+        this.batchChange = this.batchChange.bind(this);
+        
+        this.state = {batchFunctionsChecked: false};
     }
     
     componentDidMount() {
@@ -805,6 +811,11 @@ class Pairings extends React.Component {
         this.forceUpdate();
     }
     
+    batchChange() {
+        console.log("it worked");
+        this.setState({batchFunctionsChecked: $('#batch-functions').is(":checked")});
+    }
+    
     renderRounds() {
         if (round != "DONE" && round <= numRounds) {
             return(<div class="container">
@@ -823,13 +834,43 @@ class Pairings extends React.Component {
                     
                 <button class="btn btn-secondary" data-toggle="modal" data-target="#drop-modal"><i class="fa fa-user-times pr-2" aria-hidden="true"></i>Drop Player</button>
                     
-                <button class="btn btn-secondary" onClick={() => this.autoWins()}><i class="fa fa-gears pr-2" aria-hidden="true"></i>Auto Wins</button>
-                    
-                <button class="btn btn-secondary" onClick={() => this.smartWins()}><i class="fa fa-gears pr-2" aria-hidden="true"></i>Smart Wins</button>
-                    
-                <button class="btn btn-secondary" onClick={() => this.uncompleteAllPairings()}><i class="fa fa-gears pr-2" aria-hidden="true"></i>Uncomplete All Pairings</button>
-                    
                 <button class="btn btn-info" data-toggle="popover" data-placement="bottom" data-title="How to use" data-content="Click on a player to assign the win, click on vs to assign both players the tie, and click on an already completed match to undo."><i class="fa fa-question pr-2" aria-hidden="true"></i>Help</button>
+                    
+                    <div class="btn btn-info" data-toggle="modal" data-target="#options-modal"><i class="fa fa-gear pr-2" aria-hidden="true"></i>Options</div>
+                
+                <div class="modal fade" id="options-modal" tabindex="-1" role="dialog" aria-labelledby="load-modal-label" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="load-modal-label">Options</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col">
+                                    <p class="switch-label">Show batch pairing functions</p>
+                                    <div class="modal-body" >
+                                        <div class="switch round blue-white-switch">
+                                            <label>
+                                                Off
+                                                <input onChange={() => this.batchChange()} id="batch-functions" type="checkbox"></input>
+                                                <span class="lever"></span>
+                                                On
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <p class="font-small text-muted switch-side-label">Enables Auto Wins, Smart Wins, and Uncomplete Pairings toggles</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                    
+                {this.renderBatchFunctions()}
                     
                 <div class="md-form">
                     <i class="fa fa-search prefix"></i>
@@ -871,6 +912,20 @@ class Pairings extends React.Component {
                 <Standings name={tournamentName} date={tournamentDate} players={players} pairingsHistory={pairingsHistory} rounds={rounds} mode="initial" />
             </div>
         );
+        }
+    }
+    
+    renderBatchFunctions() {
+        if (this.state.batchFunctionsChecked) {
+            return(
+                <div>
+                <button class="btn btn-secondary" onClick={() => this.autoWins()}><i class="fa fa-gears pr-2" aria-hidden="true"></i>Auto Wins</button>
+                    
+                <button class="btn btn-secondary" onClick={() => this.smartWins()}><i class="fa fa-gears pr-2" aria-hidden="true"></i>Smart Wins</button>
+                    
+                <button class="btn btn-secondary" onClick={() => this.uncompleteAllPairings()}><i class="fa fa-gears pr-2" aria-hidden="true"></i>Uncomplete All Pairings</button>
+                    </div>
+            );
         }
     }
     
@@ -1219,16 +1274,16 @@ function recommendedRounds() {
 
 function IDtoCut(player) {
     let mp = matchPoints(player);
-    let pointsByID = numRounds - round;
+    let pointsByID = numRounds - round + 1;
     
-    if (numRounds == 3 && mp + pointsByID >= 6) return true;
-    if (numRounds == 4 && mp + pointsByID >= 9) return true;
-    if (numRounds == 5 && mp + pointsByID >= 9) return true;
-    if (numRounds == 6 && mp + pointsByID >= 12) return true;
-    if (numRounds == 7 && mp + pointsByID >= 15) return true;
-    if (numRounds == 8 && mp + pointsByID >= 18) return true;
-    if (numRounds == 9 && mp + pointsByID >= 21) return true;
-    if (numRounds == 10 && mp + pointsByID >= 24) return true;
+    if (numRounds == 3 && mp + pointsByID >= 7) return true;
+    if (numRounds == 4 && mp + pointsByID >= 10) return true;
+    if (numRounds == 5 && mp + pointsByID >= 10) return true;
+    if (numRounds == 6 && mp + pointsByID >= 13) return true;
+    if (numRounds == 7 && mp + pointsByID >= 16) return true;
+    if (numRounds == 8 && mp + pointsByID >= 19) return true;
+    if (numRounds == 9 && mp + pointsByID >= 22) return true;
+    if (numRounds == 10 && mp + pointsByID >= 25) return true;
     
     return false;
 }
